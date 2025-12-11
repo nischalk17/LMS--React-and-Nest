@@ -188,8 +188,3 @@ The frontend will run on `http://localhost:5173`
 4. Configure CORS properly
 5. Build frontend: `npm run build`
 6. Serve frontend build with a web server (nginx, etc.)
-
-## License
-
-MIT
-
