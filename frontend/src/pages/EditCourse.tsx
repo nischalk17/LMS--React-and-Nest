@@ -236,26 +236,71 @@ const EditCourse = () => {
             )}
             {moduleForm.type === 'video' && (
               <div className="form-group">
-                <label>Video URL</label>
+                <label>Video URL or Upload File</label>
                 <input
                   type="url"
                   value={moduleForm.videoUrl}
                   onChange={(e) =>
                     setModuleForm({ ...moduleForm, videoUrl: e.target.value })
                   }
+                  placeholder="Enter YouTube URL or video URL"
                 />
+                <div className="file-upload-section">
+                  <input
+                    type="file"
+                    id="video-upload"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        // For now, we'll use a data URL or you can integrate with a file upload service
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          // In production, upload to server and get URL
+                          // For now, using object URL
+                          const objectUrl = URL.createObjectURL(file);
+                          setModuleForm({ ...moduleForm, videoUrl: objectUrl });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="video-upload" className="file-upload-btn">
+                    📹 Upload Video File
+                  </label>
+                </div>
               </div>
             )}
             {moduleForm.type === 'pdf' && (
               <div className="form-group">
-                <label>PDF URL</label>
+                <label>PDF URL or Upload File</label>
                 <input
                   type="url"
                   value={moduleForm.pdfUrl}
                   onChange={(e) =>
                     setModuleForm({ ...moduleForm, pdfUrl: e.target.value })
                   }
+                  placeholder="Enter PDF URL"
                 />
+                <div className="file-upload-section">
+                  <input
+                    type="file"
+                    id="pdf-upload"
+                    accept="application/pdf"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const objectUrl = URL.createObjectURL(file);
+                        setModuleForm({ ...moduleForm, pdfUrl: objectUrl });
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                  <label htmlFor="pdf-upload" className="file-upload-btn">
+                    📄 Upload PDF File
+                  </label>
+                </div>
               </div>
             )}
             <button type="submit" className="btn-primary">

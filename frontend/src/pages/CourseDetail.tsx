@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { courseService, Course } from '../services/courseService';
+import { courseService, Course, Module } from '../services/courseService';
 import { enrollmentService } from '../services/enrollmentService';
+import { convertToEmbedUrl } from '../utils/videoUtils';
+import QuestionsSection from '../components/QuestionsSection';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
@@ -13,6 +15,8 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null);
+  const [showModuleViewer, setShowModuleViewer] = useState(false);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -59,6 +63,18 @@ const CourseDetail = () => {
     return <div>Course not found</div>;
   }
 
+  const handleModuleClick = (module: Module) => {
+    if (isEnrolled || user?.role === 'instructor') {
+      setSelectedModule(module);
+      setShowModuleViewer(true);
+    }
+  };
+
+  const closeModuleViewer = () => {
+    setShowModuleViewer(false);
+    setSelectedModule(null);
+  };
+
   const sortedModules = course.modules?.sort((a, b) => a.order - b.order) || [];
 
   return (
@@ -102,13 +118,28 @@ const CourseDetail = () => {
         ) : (
           <div className="modules-list">
             {sortedModules.map((module, index) => (
-              <div key={module.id} className="module-item">
+              <div 
+                key={module.id} 
+                className={`module-item ${(isEnrolled || user?.role === 'instructor') ? 'clickable' : ''}`}
+                onClick={() => handleModuleClick(module)}
+              >
                 <div className="module-number">{index + 1}</div>
                 <div className="module-content">
                   <h3>{module.title}</h3>
-                  <p className="module-type">Type: {module.type}</p>
-                  {module.content && (
-                    <p className="module-preview">{module.content}</p>
+                  <p className="module-type">
+                    <span className={`module-type-badge module-type-${module.type}`}>
+                      {module.type.toUpperCase()}
+                    </span>
+                  </p>
+                  {module.content && module.type === 'text' && (
+                    <p className="module-preview">{module.content.substring(0, 150)}...</p>
+                  )}
+                  {(isEnrolled || user?.role === 'instructor') && (
+                    <button className="module-view-btn">
+                      {module.type === 'video' && '▶ Watch Video'}
+                      {module.type === 'pdf' && '📄 View PDF'}
+                      {module.type === 'text' && '📖 Read Content'}
+                    </button>
                   )}
                 </div>
               </div>
@@ -116,6 +147,71 @@ const CourseDetail = () => {
           </div>
         )}
       </div>
+
+      {showModuleViewer && selectedModule && (
+        <div className="module-viewer-overlay" onClick={closeModuleViewer}>
+          <div className="module-viewer-content" onClick={(e) => e.stopPropagation()}>
+            <button className="module-viewer-close" onClick={closeModuleViewer}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <h2 className="module-viewer-title">{selectedModule.title}</h2>
+            
+            {selectedModule.type === 'video' && selectedModule.videoUrl && (
+              <div className="module-viewer-video">
+                <iframe
+                  src={convertToEmbedUrl(selectedModule.videoUrl)}
+                  title={selectedModule.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+                <a 
+                  href={selectedModule.videoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="module-viewer-download"
+                >
+                  Open Video in New Tab
+                </a>
+              </div>
+            )}
+
+            {selectedModule.type === 'pdf' && selectedModule.pdfUrl && (
+              <div className="module-viewer-pdf">
+                <iframe
+                  src={`${selectedModule.pdfUrl}#toolbar=0`}
+                  title={selectedModule.title}
+                  style={{ width: '100%', height: '600px', border: 'none' }}
+                ></iframe>
+                <div className="module-viewer-pdf-actions">
+                  <button
+                    onClick={() => window.open(selectedModule.pdfUrl, '_blank')}
+                    className="module-viewer-download"
+                  >
+                    Open PDF in New Tab
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedModule.type === 'text' && selectedModule.content && (
+              <div className="module-viewer-text">
+                <div className="module-text-content">
+                  {selectedModule.content.split('\n').map((paragraph, idx) => (
+                    <p key={idx}>{paragraph}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(isEnrolled || user?.role === 'instructor') && (
+        <QuestionsSection courseId={id || ''} />
+      )}
     </div>
   );
 };

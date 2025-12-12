@@ -13,5 +13,3 @@ import { Progress } from '../entities/progress.entity';
   providers: [EnrollmentsService],
 })
 export class EnrollmentsModule {}
-
-
