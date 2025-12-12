@@ -4,12 +4,47 @@ A full-stack Learning Management System built with React + Vite (frontend), Nest
 
 ## Features
 
+### Core Features
 - **User Authentication**: JWT-based authentication with role-based access control (Student/Instructor)
+- **Password Security**: 
+  - Eye icon toggle for password visibility
+  - Strong password validation (requires uppercase, lowercase, number, and underscore)
+  - Real-time password requirement indicators
 - **Course Management**: Instructors can create, edit, and manage courses with modules
 - **Course Enrollment**: Students can browse and enroll in published courses
-- **Progress Tracking**: Track learning progress with completion percentages
+- **Progress Tracking**: Automatic progress tracking when students view modules with visual completion indicators
 - **Dashboard**: Personalized dashboards for students and instructors
-- **Responsive UI**: Modern, responsive user interface
+
+### Content Features
+- **Video Support**: 
+  - YouTube video embedding with automatic URL conversion
+  - Large, responsive video player (minimum 500px height)
+  - Support for YouTube watch URLs, short URLs, and embed URLs
+  - Video file upload support
+- **PDF Support**: 
+  - Embedded PDF viewer in same tab
+  - Option to open PDFs in new tab
+  - PDF file upload support
+- **Text Content**: Formatted text content viewer with proper styling
+
+### Course Discovery
+- **Search Functionality**: Real-time search across course titles, descriptions, and instructors
+- **Filtering**: Filter courses by instructor
+- **Pagination**: Browse courses with pagination (9 courses per page)
+- **Smart Messaging**: "No courses found" message when search/filter returns no results
+
+### Interactive Features
+- **Question & Answer System**: 
+  - Students can ask questions on course pages
+  - Instructors can answer questions
+  - Questions and answers displayed with timestamps
+- **File Upload**: Support for uploading images, videos, and PDFs when creating course modules
+
+### UI/UX
+- **Modern Learning Theme**: Pleasant blue and green color scheme optimized for learning
+- **Performance Optimized**: Reduced animations for faster page loads
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Visual Progress Indicators**: Completion badges and progress bars
 
 ## Tech Stack
 

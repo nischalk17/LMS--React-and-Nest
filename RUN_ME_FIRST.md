@@ -108,8 +108,29 @@ npm install
 ## 🎯 Next Steps After Setup
 
 1. Register a new account (Student or Instructor)
+   - Use a strong password (uppercase, lowercase, number, underscore)
+   - Toggle password visibility with the eye icon
 2. Login with your credentials
 3. Explore the dashboard
-4. Create courses (as Instructor)
-5. Enroll in courses (as Student)
+4. **As Instructor**:
+   - Create courses with modules
+   - Upload videos/PDFs or use YouTube URLs
+   - Answer student questions
+5. **As Student**:
+   - Browse courses with search and filters
+   - Enroll in courses
+   - View content (videos, PDFs, text)
+   - Track your progress automatically
+   - Ask questions on course pages
+
+## ✨ Key Features
+
+- **Password Security**: Strong validation with real-time feedback
+- **Video Support**: Large YouTube player with automatic URL conversion
+- **PDF Viewer**: Embedded viewer with same-tab viewing
+- **Search & Filter**: Find courses quickly by title, description, or instructor
+- **Progress Tracking**: Automatic progress updates when viewing modules
+- **Q&A System**: Students can ask questions, instructors can answer
+- **File Upload**: Upload videos and PDFs for course modules
+- **Modern UI**: Learning-optimized colors and fast performance
 

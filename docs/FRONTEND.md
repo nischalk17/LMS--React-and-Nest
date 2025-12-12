@@ -80,28 +80,52 @@ React Router handles navigation:
 
 #### Login Page
 - Email/password form
+- Eye icon toggle for password visibility
 - Redirects to dashboard on success
 - Error handling
 
 #### Register Page
 - User registration form
 - Role selection (student/instructor)
-- Password validation
+- **Advanced Password Validation**:
+  - Requires uppercase letter
+  - Requires lowercase letter
+  - Requires number
+  - Requires underscore
+  - Real-time validation feedback with visual indicators
+- Eye icon toggle for password visibility
 
 #### Dashboard
-- **Student View**: Shows enrolled courses with progress
+- **Student View**: 
+  - Shows enrolled courses with progress bars
+  - Progress percentage display
+  - "Continue Learning" buttons
+  - Visual progress indicators
 - **Instructor View**: Quick access to course management
 
 #### Course Catalog
-- Lists all published courses
+- Lists all published courses with pagination (9 per page)
+- **Search Bar**: Real-time search across titles, descriptions, and instructors
+- **Instructor Filter**: Dropdown to filter courses by instructor
 - Course cards with thumbnails
 - Link to course details
+- "No courses found" message when search/filter returns no results
 
 #### Course Detail
 - Full course information
-- Module list
+- Module list with completion indicators
+- **Module Viewer**: 
+  - Large video player (500px+ height) with YouTube URL conversion
+  - Embedded PDF viewer with same-tab viewing
+  - Text content viewer with formatted display
+  - "Open in New Tab" options for videos and PDFs
+- **Progress Tracking**: Automatically marks modules as completed when viewed
+- **Question & Answer Section**: 
+  - Students can ask questions
+  - Instructors can answer questions
+  - Displays all Q&A with timestamps
 - Enrollment button (students only)
-- Redirects enrolled students to dashboard
+- Visual completion badges for completed modules
 
 #### Instructor Courses
 - Lists all courses (published and draft)
@@ -110,7 +134,11 @@ React Router handles navigation:
 
 #### Create/Edit Course
 - Course form (title, description, thumbnail)
-- Module management
+- **Module Management**:
+  - Add modules with types: Text, Video, PDF
+  - **File Upload Support**: Upload video and PDF files directly
+  - URL input for external resources (YouTube, PDF links)
+  - Module ordering and deletion
 - Publish/unpublish toggle
 
 ## State Management
@@ -157,7 +185,12 @@ try {
 - CSS modules for component-specific styles
 - Global styles in `index.css`
 - Responsive design with CSS Grid and Flexbox
-- Modern UI with gradients and shadows
+- **Learning Theme Colors**:
+  - Primary Blue: `#4a90e2` (knowledge, trust)
+  - Secondary Green: `#5a9` (growth, learning)
+  - Clean backgrounds: `#f0f4f8`
+- Performance-optimized with minimal animations
+- Smooth transitions (0.2s) for better performance
 
 ## TypeScript
 
@@ -222,13 +255,41 @@ VITE_API_URL=http://localhost:3000
 4. **Type Safety**: Use TypeScript types for all data
 5. **Component Reusability**: Extract common UI patterns
 
+## New Features Implemented
+
+### Video & Content Viewing
+- **YouTube Integration**: Automatic URL conversion to embed format
+- **Large Video Player**: Minimum 500px height for better viewing experience
+- **PDF Viewer**: Embedded viewer with same-tab and new-tab options
+- **File Upload**: Support for uploading videos and PDFs
+
+### Course Discovery
+- **Search**: Real-time search functionality
+- **Filtering**: Filter by instructor
+- **Pagination**: 9 courses per page with navigation
+
+### Progress Tracking
+- **Automatic Tracking**: Progress updated when students view modules
+- **Visual Indicators**: Completion badges and checkmarks
+- **Progress Bars**: Visual progress representation on dashboard
+
+### Question & Answer
+- **Student Questions**: Students can ask questions on course pages
+- **Instructor Answers**: Instructors can respond to questions
+- **Q&A Display**: All questions and answers shown with timestamps
+
+### Security & UX
+- **Password Validation**: Strong password requirements with real-time feedback
+- **Password Visibility**: Eye icon toggle for password fields
+- **Performance**: Reduced animations for faster page loads
+
 ## Future Enhancements
 
 - Add React Query for better data fetching
 - Implement optimistic updates
 - Add toast notifications
-- Implement search and filtering
-- Add pagination for course lists
-- Implement file upload for thumbnails
+- Implement file upload backend integration
 - Add rich text editor for course descriptions
+- Add video playback progress tracking
+- Implement course ratings and reviews
 

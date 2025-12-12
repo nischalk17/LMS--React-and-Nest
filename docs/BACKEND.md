@@ -221,7 +221,7 @@ Get progress for a specific enrollment.
 ### Progress Endpoints
 
 #### PATCH /progress/:enrollmentId/modules/:moduleId
-Update progress for a module.
+Update progress for a module. Automatically called when students view modules.
 
 **Request Body:**
 ```json
@@ -229,6 +229,19 @@ Update progress for a module.
   "completionPercentage": 100
 }
 ```
+
+**Response:**
+```json
+{
+  "id": "uuid",
+  "enrollmentId": "uuid",
+  "moduleId": "uuid",
+  "isCompleted": true,
+  "completionPercentage": 100
+}
+```
+
+**Note**: Progress is automatically updated to 100% when a student views a module. The frontend tracks module views and updates progress accordingly.
 
 ## Security
 

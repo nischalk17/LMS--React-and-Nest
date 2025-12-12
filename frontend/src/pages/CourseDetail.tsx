@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { courseService, Course, Module } from '../services/courseService';
-import { enrollmentService } from '../services/enrollmentService';
+import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { convertToEmbedUrl } from '../utils/videoUtils';
 import QuestionsSection from '../components/QuestionsSection';
 import './CourseDetail.css';
@@ -15,6 +15,7 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showModuleViewer, setShowModuleViewer] = useState(false);
 
@@ -25,10 +26,14 @@ const CourseDetail = () => {
           const data = await courseService.getById(id);
           setCourse(data);
           
-          // Check if user is enrolled
+          // Check if user is enrolled and get enrollment details
           if (user?.role === 'student') {
             const enrollments = await enrollmentService.getMyEnrollments();
-            setIsEnrolled(enrollments.some((e) => e.courseId === id));
+            const userEnrollment = enrollments.find((e) => e.courseId === id);
+            if (userEnrollment) {
+              setIsEnrolled(true);
+              setEnrollment(userEnrollment);
+            }
           }
         }
       } catch (error) {
@@ -63,10 +68,29 @@ const CourseDetail = () => {
     return <div>Course not found</div>;
   }
 
-  const handleModuleClick = (module: Module) => {
+  const handleModuleClick = async (module: Module) => {
     if (isEnrolled || user?.role === 'instructor') {
       setSelectedModule(module);
       setShowModuleViewer(true);
+      
+      // Update progress when student views a module
+      if (isEnrolled && enrollment && user?.role === 'student') {
+        try {
+          await enrollmentService.updateProgress(
+            enrollment.id,
+            module.id,
+            100 // Mark as 100% complete when viewed
+          );
+          // Refresh enrollment to get updated progress
+          const enrollments = await enrollmentService.getMyEnrollments();
+          const updatedEnrollment = enrollments.find((e) => e.courseId === id);
+          if (updatedEnrollment) {
+            setEnrollment(updatedEnrollment);
+          }
+        } catch (error) {
+          console.error('Failed to update progress:', error);
+        }
+      }
     }
   };
 
@@ -117,33 +141,44 @@ const CourseDetail = () => {
           <p>No modules available yet.</p>
         ) : (
           <div className="modules-list">
-            {sortedModules.map((module, index) => (
-              <div 
-                key={module.id} 
-                className={`module-item ${(isEnrolled || user?.role === 'instructor') ? 'clickable' : ''}`}
-                onClick={() => handleModuleClick(module)}
-              >
-                <div className="module-number">{index + 1}</div>
-                <div className="module-content">
-                  <h3>{module.title}</h3>
-                  <p className="module-type">
-                    <span className={`module-type-badge module-type-${module.type}`}>
-                      {module.type.toUpperCase()}
-                    </span>
-                  </p>
-                  {module.content && module.type === 'text' && (
-                    <p className="module-preview">{module.content.substring(0, 150)}...</p>
-                  )}
-                  {(isEnrolled || user?.role === 'instructor') && (
-                    <button className="module-view-btn">
-                      {module.type === 'video' && '▶ Watch Video'}
-                      {module.type === 'pdf' && '📄 View PDF'}
-                      {module.type === 'text' && '📖 Read Content'}
-                    </button>
-                  )}
+            {sortedModules.map((module, index) => {
+              const isCompleted = enrollment?.progress?.some(
+                (p) => p.moduleId === module.id && p.isCompleted
+              );
+              
+              return (
+                <div 
+                  key={module.id} 
+                  className={`module-item ${(isEnrolled || user?.role === 'instructor') ? 'clickable' : ''} ${isCompleted ? 'completed' : ''}`}
+                  onClick={() => handleModuleClick(module)}
+                >
+                  <div className={`module-number ${isCompleted ? 'completed' : ''}`}>
+                    {isCompleted ? '✓' : index + 1}
+                  </div>
+                  <div className="module-content">
+                    <h3>
+                      {module.title}
+                      {isCompleted && <span className="completed-badge">Completed</span>}
+                    </h3>
+                    <p className="module-type">
+                      <span className={`module-type-badge module-type-${module.type}`}>
+                        {module.type.toUpperCase()}
+                      </span>
+                    </p>
+                    {module.content && module.type === 'text' && (
+                      <p className="module-preview">{module.content.substring(0, 150)}...</p>
+                    )}
+                    {(isEnrolled || user?.role === 'instructor') && (
+                      <button className="module-view-btn">
+                        {module.type === 'video' && '▶ Watch Video'}
+                        {module.type === 'pdf' && '📄 View PDF'}
+                        {module.type === 'text' && '📖 Read Content'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
