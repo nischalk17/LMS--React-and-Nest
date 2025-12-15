@@ -31,6 +31,8 @@ Or using createdb:
 createdb -U postgres lms_db
 ```
 
+OR Directly use PgAdmin4 
+
 ### 3. Create Backend .env File
 
 Create `backend/.env`:

@@ -1,18 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { courseService, Course, CreateModuleDto } from '../services/courseService';
-import './CourseForm.css';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../components/ui/form';
+import { Badge } from '../components/ui/badge';
+
+const courseSchema = z.object({
+  title: z.string().min(3, 'Title is required'),
+  description: z.string().min(10, 'Description is required'),
+  thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  isPublished: z.boolean(),
+});
+
+type CourseForm = z.infer<typeof courseSchema>;
 
 const EditCourse = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    thumbnail: '',
-    isPublished: false,
-  });
   const [moduleForm, setModuleForm] = useState<CreateModuleDto>({
     title: '',
     content: '',
@@ -25,13 +43,23 @@ const EditCourse = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const form = useForm<CourseForm>({
+    resolver: zodResolver(courseSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      thumbnail: '',
+      isPublished: false,
+    },
+  });
+
   useEffect(() => {
     const fetchCourse = async () => {
       try {
         if (id) {
           const data = await courseService.getById(id);
           setCourse(data);
-          setFormData({
+          form.reset({
             title: data.title,
             description: data.description,
             thumbnail: data.thumbnail || '',
@@ -46,16 +74,15 @@ const EditCourse = () => {
     };
 
     fetchCourse();
-  }, [id]);
+  }, [id, form]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: CourseForm) => {
     setError('');
     setSaving(true);
 
     try {
       if (id) {
-        await courseService.update(id, formData);
+        await courseService.update(id, values);
         alert('Course updated successfully!');
       }
     } catch (err: any) {
@@ -116,7 +143,7 @@ const EditCourse = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">Loading...</div>;
   }
 
   if (!course) {
@@ -126,86 +153,116 @@ const EditCourse = () => {
   const sortedModules = course.modules?.sort((a, b) => a.order - b.order) || [];
 
   return (
-    <div className="course-form-container">
-      <div className="course-form">
-        <h1>Edit Course</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Course Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Description *</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              required
-              rows={5}
-            />
-          </div>
-          <div className="form-group">
-            <label>Thumbnail URL</label>
-            <input
-              type="url"
-              value={formData.thumbnail}
-              onChange={(e) =>
-                setFormData({ ...formData, thumbnail: e.target.value })
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={formData.isPublished}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPublished: e.target.checked })
-                }
+    <div className="space-y-6">
+      <Card className="shadow-brand">
+        <CardHeader>
+          <CardTitle className="text-2xl">Edit Course</CardTitle>
+          <CardDescription>Update details and manage modules using Tailwind UI.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              Published
-            </label>
-          </div>
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate('/instructor/courses')}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button type="submit" disabled={saving} className="btn-primary">
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea rows={4} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="thumbnail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Thumbnail URL</FormLabel>
+                    <FormControl>
+                      <Input type="url" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPublished"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                        Published
+                      </label>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/instructor/courses')}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
-        <div className="modules-section">
-          <h2>Course Modules</h2>
-          <form onSubmit={handleAddModule} className="module-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Module Title *</label>
-                <input
-                  type="text"
+      <Card className="shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">Course Modules</CardTitle>
+          <CardDescription>Add, upload, or remove modules.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <form onSubmit={handleAddModule} className="space-y-4 rounded-lg border border-slate-200 p-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-700">Module Title</label>
+                <Input
                   value={moduleForm.title}
-                  onChange={(e) =>
-                    setModuleForm({ ...moduleForm, title: e.target.value })
-                  }
+                  onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
                   required
+                  placeholder="Intro to course"
+                  className="mt-2"
                 />
               </div>
-              <div className="form-group">
-                <label>Type *</label>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Type</label>
                 <select
                   value={moduleForm.type}
                   onChange={(e) =>
@@ -215,6 +272,7 @@ const EditCourse = () => {
                     })
                   }
                   required
+                  className="mt-2 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
                 >
                   <option value="text">Text</option>
                   <option value="video">Video</option>
@@ -222,22 +280,23 @@ const EditCourse = () => {
                 </select>
               </div>
             </div>
+
             {moduleForm.type === 'text' && (
-              <div className="form-group">
-                <label>Content</label>
-                <textarea
-                  value={moduleForm.content}
-                  onChange={(e) =>
-                    setModuleForm({ ...moduleForm, content: e.target.value })
-                  }
+              <div>
+                <label className="text-sm font-medium text-slate-700">Content</label>
+                <Textarea
+                  className="mt-2"
                   rows={4}
+                  value={moduleForm.content}
+                  onChange={(e) => setModuleForm({ ...moduleForm, content: e.target.value })}
                 />
               </div>
             )}
+
             {moduleForm.type === 'video' && (
-              <div className="form-group">
-                <label>Video URL or Upload File</label>
-                <input
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Video URL or Upload File</label>
+                <Input
                   type="url"
                   value={moduleForm.videoUrl}
                   onChange={(e) =>
@@ -245,37 +304,34 @@ const EditCourse = () => {
                   }
                   placeholder="Enter YouTube URL or video URL"
                 />
-                <div className="file-upload-section">
+                <div className="flex items-center gap-3">
                   <input
                     type="file"
                     id="video-upload"
                     accept="video/*"
+                    className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        // For now, we'll use a data URL or you can integrate with a file upload service
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          // In production, upload to server and get URL
-                          // For now, using object URL
-                          const objectUrl = URL.createObjectURL(file);
-                          setModuleForm({ ...moduleForm, videoUrl: objectUrl });
-                        };
-                        reader.readAsDataURL(file);
+                        const objectUrl = URL.createObjectURL(file);
+                        setModuleForm({ ...moduleForm, videoUrl: objectUrl });
                       }
                     }}
-                    style={{ display: 'none' }}
                   />
-                  <label htmlFor="video-upload" className="file-upload-btn">
+                  <label
+                    htmlFor="video-upload"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                  >
                     📹 Upload Video File
                   </label>
                 </div>
               </div>
             )}
+
             {moduleForm.type === 'pdf' && (
-              <div className="form-group">
-                <label>PDF URL or Upload File</label>
-                <input
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">PDF URL or Upload File</label>
+                <Input
                   type="url"
                   value={moduleForm.pdfUrl}
                   onChange={(e) =>
@@ -283,11 +339,12 @@ const EditCourse = () => {
                   }
                   placeholder="Enter PDF URL"
                 />
-                <div className="file-upload-section">
+                <div className="flex items-center gap-3">
                   <input
                     type="file"
                     id="pdf-upload"
                     accept="application/pdf"
+                    className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -295,42 +352,54 @@ const EditCourse = () => {
                         setModuleForm({ ...moduleForm, pdfUrl: objectUrl });
                       }
                     }}
-                    style={{ display: 'none' }}
                   />
-                  <label htmlFor="pdf-upload" className="file-upload-btn">
+                  <label
+                    htmlFor="pdf-upload"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                  >
                     📄 Upload PDF File
                   </label>
                 </div>
               </div>
             )}
-            <button type="submit" className="btn-primary">
-              Add Module
-            </button>
+
+            <Button type="submit">Add Module</Button>
           </form>
 
-          <div className="modules-list">
+          <div className="space-y-3">
             {sortedModules.length === 0 ? (
-              <p>No modules yet. Add your first module above.</p>
+              <p className="text-sm text-slate-600">No modules yet. Add your first module above.</p>
             ) : (
               sortedModules.map((module, index) => (
-                <div key={module.id} className="module-item">
-                  <div className="module-header">
-                    <span className="module-number">{index + 1}</span>
-                    <h4>{module.title}</h4>
-                    <span className="module-type">{module.type}</span>
+                <div
+                  key={module.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-900">{module.title}</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                        {module.type}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">Order {module.order}</Badge>
                   </div>
-                  <button
+                  <Button
+                    variant="destructive"
+                    size="sm"
                     onClick={() => handleDeleteModule(module.id)}
-                    className="btn-danger btn-small"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               ))
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

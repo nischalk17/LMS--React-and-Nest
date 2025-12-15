@@ -1,98 +1,139 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { courseService } from '../services/courseService';
-import './CourseForm.css';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Button } from '../components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+
+const courseSchema = z.object({
+  title: z.string().min(3, 'Title is required'),
+  description: z.string().min(10, 'Description is required'),
+  thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  isPublished: z.boolean().optional(),
+});
+
+type CourseForm = z.infer<typeof courseSchema>;
 
 const CreateCourse = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    thumbnail: '',
-    isPublished: false,
+  const form = useForm<CourseForm>({
+    resolver: zodResolver(courseSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      thumbnail: '',
+      isPublished: false,
+    },
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
+  const onSubmit = async (values: CourseForm) => {
     try {
-      const course = await courseService.create(formData);
+      const course = await courseService.create(values);
       navigate(`/instructor/courses/${course.id}/edit`);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create course');
-    } finally {
-      setLoading(false);
+      const message = err?.response?.data?.message || 'Failed to create course';
+      form.setError('title', { message });
     }
   };
 
   return (
-    <div className="course-form-container">
-      <div className="course-form">
-        <h1>Create New Course</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Course Title *</label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Description *</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              required
-              rows={5}
-            />
-          </div>
-          <div className="form-group">
-            <label>Thumbnail URL</label>
-            <input
-              type="url"
-              value={formData.thumbnail}
-              onChange={(e) =>
-                setFormData({ ...formData, thumbnail: e.target.value })
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              <input
-                type="checkbox"
-                checked={formData.isPublished}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPublished: e.target.checked })
-                }
+    <div className="max-w-4xl space-y-6">
+      <Card className="shadow-brand">
+        <CardHeader>
+          <CardTitle className="text-2xl">Create New Course</CardTitle>
+          <CardDescription>
+            Build a new course using Tailwind + shadcn UI, Redux-authenticated flow.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Modern React Patterns" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              Publish immediately
-            </label>
-          </div>
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={() => navigate('/instructor/courses')}
-              className="btn-secondary"
-            >
-              Cancel
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Creating...' : 'Create Course'}
-            </button>
-          </div>
-        </form>
-      </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea rows={5} placeholder="Describe your course..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="thumbnail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Thumbnail URL</FormLabel>
+                    <FormControl>
+                      <Input type="url" placeholder="https://example.com/cover.jpg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isPublished"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                        Publish immediately
+                      </label>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/instructor/courses')}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Create Course
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };

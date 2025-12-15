@@ -2,7 +2,7 @@
 
 ## Overview
 
-The frontend is built with React 18 and Vite, providing a fast development experience and optimized production builds. It uses TypeScript for type safety and React Router for client-side routing.
+The frontend is built with React 18 and Vite, styled with Tailwind CSS and shadcn/ui components. It uses TypeScript for type safety, React Router for client-side routing, Redux Toolkit for auth state, and React Hook Form + Zod for form validation.
 
 ## Architecture
 
@@ -37,19 +37,19 @@ frontend/
 
 ## Core Concepts
 
-### 1. Authentication Context
+### 1. Authentication Hook (Redux-backed)
 
-The `AuthContext` provides global authentication state:
+`useAuth` is a thin wrapper around the Redux `auth` slice:
 
 ```typescript
-const { user, login, register, logout } = useAuth();
+const { user, login, register, logout, status } = useAuth();
 ```
 
 **Features:**
-- Stores user information
+- Stores user information in Redux + localStorage
 - Manages JWT token in localStorage
-- Provides login/register/logout functions
-- Auto-loads user on app start
+- Provides login/register/logout async thunks
+- Auto-hydrates user on app start
 
 ### 2. API Service Layer
 
@@ -104,7 +104,7 @@ React Router handles navigation:
 - **Instructor View**: Quick access to course management
 
 #### Course Catalog
-- Lists all published courses with pagination (9 per page)
+- Lists all published courses with pagination (6 per page)
 - **Search Bar**: Real-time search across titles, descriptions, and instructors
 - **Instructor Filter**: Dropdown to filter courses by instructor
 - Course cards with thumbnails
@@ -115,8 +115,8 @@ React Router handles navigation:
 - Full course information
 - Module list with completion indicators
 - **Module Viewer**: 
-  - Large video player (500px+ height) with YouTube URL conversion
-  - Embedded PDF viewer with same-tab viewing
+  - Larger 16:9 video player (default ~480px height) with YouTube URL conversion
+  - PDFs open directly in a new tab for consistent viewing
   - Text content viewer with formatted display
   - "Open in New Tab" options for videos and PDFs
 - **Progress Tracking**: Automatically marks modules as completed when viewed
@@ -143,14 +143,9 @@ React Router handles navigation:
 
 ## State Management
 
-### Local State
-- Component-level state with `useState`
-- Form data management
-- Loading and error states
-
-### Global State
-- Authentication state via Context API
-- No external state management library needed
+- Redux Toolkit slice (`auth`) holds authenticated user state and token hydration.
+- React Hook Form + Zod manage login, registration, and course forms with schema-backed validation.
+- Component-level UI state remains with `useState` for view-specific toggles.
 
 ## API Integration
 
@@ -182,15 +177,10 @@ try {
 
 ## Styling
 
-- CSS modules for component-specific styles
-- Global styles in `index.css`
-- Responsive design with CSS Grid and Flexbox
-- **Learning Theme Colors**:
-  - Primary Blue: `#4a90e2` (knowledge, trust)
-  - Secondary Green: `#5a9` (growth, learning)
-  - Clean backgrounds: `#f0f4f8`
-- Performance-optimized with minimal animations
-- Smooth transitions (0.2s) for better performance
+- Tailwind CSS utilities with shadcn/ui primitives (buttons, cards, form controls).
+- Global Tailwind entrypoint: `src/index.css`; standalone CSS files have been removed.
+- Responsive layouts via Tailwind flex/grid utilities.
+- Smooth, minimal transitions to keep interactions performant.
 
 ## TypeScript
 

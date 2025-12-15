@@ -1,174 +1,171 @@
-import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import './Auth.css';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../components/ui/form';
+import { Input } from '../components/ui/input';
+import { Select } from '../components/ui/select';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+
+const registerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Enter a valid email'),
+  password: z
+    .string()
+    .min(6, 'At least 6 characters')
+    .regex(/[a-z]/, 'Include a lowercase letter')
+    .regex(/[A-Z]/, 'Include an uppercase letter')
+    .regex(/[0-9]/, 'Include a number')
+    .regex(/_/, 'Include an underscore'),
+  role: z.enum(['student', 'instructor']),
+});
+
+type RegisterForm = z.infer<typeof registerSchema>;
 
 const Register = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    role: 'student' as 'student' | 'instructor',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register: registerUser, status, error } = useAuth();
   const navigate = useNavigate();
 
-  const validatePassword = (pwd: string): string[] => {
-    const errors: string[] = [];
-    if (!/[a-z]/.test(pwd)) errors.push('lowercase letter');
-    if (!/[A-Z]/.test(pwd)) errors.push('uppercase letter');
-    if (!/[0-9]/.test(pwd)) errors.push('number');
-    if (!/_/.test(pwd)) errors.push('underscore');
-    return errors;
-  };
+  const form = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      role: 'student',
+    },
+  });
 
-  const handlePasswordChange = (value: string) => {
-    setFormData({ ...formData, password: value });
-    if (value.length > 0) {
-      setPasswordErrors(validatePassword(value));
-    } else {
-      setPasswordErrors([]);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    const errors = validatePassword(formData.password);
-    if (errors.length > 0) {
-      setError(`Password must contain: ${errors.join(', ')}`);
-      return;
-    }
-
-    setLoading(true);
-
+  const onSubmit = async (values: RegisterForm) => {
     try {
-      await register(formData);
+      await registerUser(values);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
+      const message = err?.response?.data?.message || 'Registration failed';
+      form.setError('email', { message });
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h1>Register</h1>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>First Name</label>
-            <input
-              type="text"
-              value={formData.firstName}
-              onChange={(e) =>
-                setFormData({ ...formData, firstName: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Last Name</label>
-            <input
-              type="text"
-              value={formData.lastName}
-              onChange={(e) =>
-                setFormData({ ...formData, lastName: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Password</label>
-            <div className="password-input-wrapper">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => handlePasswordChange(e.target.value)}
-                required
-                minLength={6}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                )}
-              </button>
-            </div>
-            {formData.password.length > 0 && (
-              <div className="password-requirements">
-                <p className="password-requirement-label">Password must contain:</p>
-                <ul className="password-requirement-list">
-                  <li className={/[a-z]/.test(formData.password) ? 'valid' : 'invalid'}>
-                    At least one lowercase letter
-                  </li>
-                  <li className={/[A-Z]/.test(formData.password) ? 'valid' : 'invalid'}>
-                    At least one uppercase letter
-                  </li>
-                  <li className={/[0-9]/.test(formData.password) ? 'valid' : 'invalid'}>
-                    At least one number
-                  </li>
-                  <li className={/_/.test(formData.password) ? 'valid' : 'invalid'}>
-                    At least one underscore
-                  </li>
-                </ul>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50 to-blue-50 px-4">
+      <Card className="w-full max-w-2xl shadow-brand">
+        <CardHeader className="space-y-3">
+          <CardTitle className="text-2xl">Create your account</CardTitle>
+          <CardDescription>Start teaching or learning right away.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 md:grid-cols-2">
+              <div className="md:col-span-1 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jane" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="you@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-            )}
-          </div>
-          <div className="form-group">
-            <label>Role</label>
-            <select
-              value={formData.role}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  role: e.target.value as 'student' | 'instructor',
-                })
-              }
-            >
-              <option value="student">Student</option>
-              <option value="instructor">Instructor</option>
-            </select>
-          </div>
-          <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-        <p className="auth-link">
-          Already have an account? <Link to="/login">Login</Link>
-        </p>
-      </div>
+
+              <div className="md:col-span-1 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Strong password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-slate-500">
+                        Include lowercase, uppercase, number, and underscore.
+                      </p>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <FormControl>
+                        <Select {...field}>
+                          <option value="student">Student</option>
+                          <option value="instructor">Instructor</option>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {error && (
+                  <p className="text-sm font-medium text-red-600">{error}</p>
+                )}
+              </div>
+
+              <div className="md:col-span-2">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={status === 'loading'}
+                >
+                  {status === 'loading' ? 'Registering...' : 'Register'}
+                </Button>
+                <p className="mt-4 text-center text-sm text-slate-600">
+                  Already have an account?{' '}
+                  <Link className="font-semibold text-primary hover:underline" to="/login">
+                    Login
+                  </Link>
+                </p>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
