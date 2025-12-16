@@ -15,6 +15,8 @@ import { Input } from '../components/ui/input';
 import { Select } from '../components/ui/select';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import ThemeToggle from '../components/ThemeToggle';
+import { PASSWORD_REQUIREMENTS, evaluatePasswordStrength } from '../utils/passwordStrength';
 
 const registerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -22,11 +24,10 @@ const registerSchema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z
     .string()
-    .min(6, 'At least 6 characters')
-    .regex(/[a-z]/, 'Include a lowercase letter')
+    .min(8, 'At least 8 characters')
     .regex(/[A-Z]/, 'Include an uppercase letter')
     .regex(/[0-9]/, 'Include a number')
-    .regex(/_/, 'Include an underscore'),
+    .regex(/[^A-Za-z0-9]/, 'Include a special symbol'),
   role: z.enum(['student', 'instructor']),
 });
 
@@ -47,6 +48,9 @@ const Register = () => {
     },
   });
 
+  const passwordValue = form.watch('password');
+  const strength = evaluatePasswordStrength(passwordValue || '');
+
   const onSubmit = async (values: RegisterForm) => {
     try {
       await registerUser(values);
@@ -58,16 +62,20 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50 to-blue-50 px-4">
-      <Card className="w-full max-w-2xl shadow-brand">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(34,197,94,0.12),transparent_30%),radial-gradient(circle_at_90%_15%,rgba(59,130,246,0.12),transparent_28%),radial-gradient(circle_at_50%_80%,rgba(99,102,241,0.14),transparent_32%)] dark:bg-[radial-gradient(circle_at_10%_20%,rgba(34,197,94,0.15),transparent_30%),radial-gradient(circle_at_90%_15%,rgba(59,130,246,0.18),transparent_28%),radial-gradient(circle_at_50%_80%,rgba(99,102,241,0.18),transparent_32%)]" />
+      <div className="absolute right-6 top-6 z-10">
+        <ThemeToggle />
+      </div>
+      <Card className="glass-panel relative z-10 w-full max-w-3xl shadow-brand transition hover:-translate-y-1 hover:shadow-2xl">
         <CardHeader className="space-y-3">
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>Start teaching or learning right away.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6 md:grid-cols-2">
-              <div className="md:col-span-1 space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="firstName"
@@ -75,7 +83,7 @@ const Register = () => {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Jane" {...field} />
+                        <Input placeholder="Jane" autoComplete="given-name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -88,20 +96,7 @@ const Register = () => {
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="you@example.com" {...field} />
+                        <Input placeholder="Doe" autoComplete="family-name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -109,45 +104,73 @@ const Register = () => {
                 />
               </div>
 
-              <div className="md:col-span-1 space-y-4">
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Strong password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-xs text-slate-500">
-                        Include lowercase, uppercase, number, and underscore.
-                      </p>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <FormControl>
-                        <Select {...field}>
-                          <option value="student">Student</option>
-                          <option value="instructor">Instructor</option>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {error && (
-                  <p className="text-sm font-medium text-red-600">{error}</p>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="you@example.com" autoComplete="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </div>
+              />
 
-              <div className="md:col-span-2">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Strong password" autoComplete="new-password" {...field} />
+                    </FormControl>
+                    <div className="space-y-3">
+                      <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className={`h-full rounded-full ${strength.barClass}`}
+                          style={{ width: `${(Math.max(strength.score, 1) / 4) * 100}%` }}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        {PASSWORD_REQUIREMENTS.map((req) => (
+                          <span
+                            key={req}
+                            className="rounded-full border border-slate-200 px-2 py-1 dark:border-slate-700"
+                          >
+                            {req}
+                          </span>
+                        ))}
+                      </div>
+                      <p className={`text-xs font-semibold ${strength.colorClass}`}>
+                        Strength: {strength.label}
+                      </p>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <FormControl>
+                      <Select {...field}>
+                        <option value="student">Student</option>
+                        <option value="instructor">Instructor</option>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-3">
                 <Button
                   type="submit"
                   className="w-full"
@@ -155,7 +178,12 @@ const Register = () => {
                 >
                   {status === 'loading' ? 'Registering...' : 'Register'}
                 </Button>
-                <p className="mt-4 text-center text-sm text-slate-600">
+                {error && (
+                  <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+                    {error}
+                  </p>
+                )}
+                <p className="text-center text-sm text-slate-600 dark:text-slate-300">
                   Already have an account?{' '}
                   <Link className="font-semibold text-primary hover:underline" to="/login">
                     Login

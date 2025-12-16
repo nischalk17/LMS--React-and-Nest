@@ -256,7 +256,7 @@ VITE_API_URL=http://localhost:3000
 ### Course Discovery
 - **Search**: Real-time search functionality
 - **Filtering**: Filter by instructor
-- **Pagination**: 9 courses per page with navigation
+- **Pagination**: 6 courses per page with navigation
 
 ### Progress Tracking
 - **Automatic Tracking**: Progress updated when students view modules

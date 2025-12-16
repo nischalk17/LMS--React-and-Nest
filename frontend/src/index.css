@@ -13,15 +13,30 @@
   --ring: 221.2 83.2% 53.3%;
 }
 
+.dark {
+  color-scheme: dark;
+  --background: 222.2 47.4% 11.2%;
+  --foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 221.2 83.2% 53.3%;
+}
+
 * {
   @apply border-border;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased min-h-screen;
+  @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900 antialiased transition-colors duration-300 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100;
 }
 
 #root {
   @apply min-h-screen;
+}
+
+.glass-panel {
+  @apply bg-white/80 backdrop-blur-lg border border-white/50 shadow-xl dark:bg-slate-900/70 dark:border-slate-800;
 }
 
