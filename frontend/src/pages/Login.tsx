@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff } from 'lucide-react';
 import {
   Form,
   FormControl,
@@ -27,6 +29,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 const Login = () => {
   const { login, status, error } = useAuth();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -37,14 +41,31 @@ const Login = () => {
   });
 
   const passwordValue = form.watch('password');
+  const emailValue = form.watch('email');
   const strength = evaluatePasswordStrength(passwordValue || '');
+
+  // Update loginError when error from auth context changes
+  useEffect(() => {
+    if (error) {
+      setLoginError(error);
+    }
+  }, [error]);
+
+  // Clear error when user starts typing
+  useEffect(() => {
+    if (emailValue || passwordValue) {
+      setLoginError(null);
+    }
+  }, [emailValue, passwordValue]);
 
   const onSubmit = async (values: LoginForm) => {
     try {
+      setLoginError(null);
       await login(values.email, values.password);
       navigate('/dashboard');
     } catch (err: any) {
       const message = err?.response?.data?.message || 'Login failed';
+      setLoginError(message);
       form.setError('email', { message });
     }
   };
@@ -84,7 +105,27 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" autoComplete="current-password" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          className="pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <div className="space-y-2">
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
@@ -110,9 +151,9 @@ const Login = () => {
                 {status === 'loading' ? 'Logging in...' : 'Login'}
               </Button>
 
-              {(error || status === 'error') && (
+              {loginError && (
                 <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
-                  {error || 'Invalid credentials. Please try again.'}
+                  {loginError}
                 </p>
               )}
             </form>

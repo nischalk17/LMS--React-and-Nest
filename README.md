@@ -30,7 +30,7 @@ A full-stack Learning Management System built with React + Vite (frontend), Nest
 ### Course Discovery
 - **Search Functionality**: Real-time search across course titles, descriptions, and instructors
 - **Filtering**: Filter courses by instructor
-- **Pagination**: Browse courses with pagination (9 courses per page)
+- **Pagination**: Browse courses with pagination (6 courses per page)
 - **Smart Messaging**: "No courses found" message when search/filter returns no results
 
 ### Interactive Features
