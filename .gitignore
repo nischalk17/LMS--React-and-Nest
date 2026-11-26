@@ -1,0 +1,10 @@
+# AI-generated / scratch docs (kept locally, not published)
+CHANGELOG.md
+COMMANDS.md
+FIXES_APPLIED.md
+QUICK_START.md
+RUN_ME_FIRST.md
+SETUP.md
+docs/*
+!docs/AUDIT.md
+STUDY_GUIDE.md
