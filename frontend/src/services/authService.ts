@@ -5,7 +5,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'student' | 'instructor';
+  role: 'student' | 'instructor' | 'admin';
 }
 
 export interface AuthResponse {
@@ -14,7 +14,7 @@ export interface AuthResponse {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'student' | 'instructor';
+  role: 'student' | 'instructor' | 'admin';
 }
 
 export const authService = {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -85,8 +86,8 @@ const EditCourse = () => {
         await courseService.update(id, values);
         alert('Course updated successfully!');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update course');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to update course'));
     } finally {
       setSaving(false);
     }
@@ -119,8 +120,8 @@ const EditCourse = () => {
         pdfUrl: '',
         order: 0,
       });
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to add module');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to add module'));
     }
   };
 
@@ -137,8 +138,8 @@ const EditCourse = () => {
           modules: course.modules?.filter((m) => m.id !== moduleId) || [],
         });
       }
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete module');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to delete module'));
     }
   };
 

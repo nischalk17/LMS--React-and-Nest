@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -36,6 +36,10 @@ const Dashboard = () => {
     const completed = enrollment.progress.filter((p) => p.isCompleted).length;
     return total > 0 ? Math.round((completed / total) * 100) : 0;
   };
+
+  if (user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
 
   if (loading) {
     return (

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 import { ModuleType } from '../../entities/module.entity';
 
 export class CreateModuleDto {
@@ -25,5 +31,3 @@ export class CreateModuleDto {
   @IsOptional()
   order?: number;
 }
-
-

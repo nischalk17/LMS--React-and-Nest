@@ -94,3 +94,17 @@ export const courseService = {
   },
 };
 
+
+export interface CourseAnalytics {
+  courseId: string;
+  students: number;
+  averageProgress: number;
+  unansweredQuestions: number;
+}
+
+export const analyticsService = {
+  async getMine(): Promise<CourseAnalytics[]> {
+    const response = await api.get<CourseAnalytics[]>('/instructor/analytics');
+    return response.data;
+  },
+};

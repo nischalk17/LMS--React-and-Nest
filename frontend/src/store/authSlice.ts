@@ -1,4 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { getErrorMessage } from '../utils/errors';
 import { authService, type User } from '../services/authService';
 
 type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'error';
@@ -51,8 +52,8 @@ export const loginUser = createAsyncThunk<
       lastName: response.lastName,
       role: response.role,
     };
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Login failed';
+  } catch (error) {
+    const message = getErrorMessage(error, 'Login failed');
     return rejectWithValue(message);
   }
 });
@@ -79,8 +80,8 @@ export const registerUser = createAsyncThunk<
       lastName: response.lastName,
       role: response.role,
     };
-  } catch (error: any) {
-    const message = error?.response?.data?.message || 'Registration failed';
+  } catch (error) {
+    const message = getErrorMessage(error, 'Registration failed');
     return rejectWithValue(message);
   }
 });

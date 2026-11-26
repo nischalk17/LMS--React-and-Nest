@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -19,70 +19,62 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
-    const existingUser = await this.userRepository.findOne({
-      where: { email: registerDto.email },
-    });
+  private toAuthResponse(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      accessToken: this.jwtService.sign({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      }),
+    };
+  }
 
+  async register(registerDto: RegisterDto) {
+    const email = registerDto.email.toLowerCase();
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
       throw new ConflictException('Email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
     const user = this.userRepository.create({
       ...registerDto,
-      password: hashedPassword,
-      role: registerDto.role || UserRole.STUDENT,
+      email,
+      password: await bcrypt.hash(registerDto.password, 10),
+      role: registerDto.role ?? UserRole.STUDENT,
     });
-
-    const savedUser = await this.userRepository.save(user);
-    const { password, ...result } = savedUser;
-
-    return {
-      ...result,
-      accessToken: this.jwtService.sign({ sub: savedUser.id, email: savedUser.email, role: savedUser.role }),
-    };
+    return this.toAuthResponse(await this.userRepository.save(user));
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.userRepository.findOne({
-      where: { email: loginDto.email },
-    });
+    // password column is select:false, so request it explicitly
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.email = :email', { email: loginDto.email.toLowerCase() })
+      .getOne();
 
-    if (!user) {
+    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.password,
-    );
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const { password, ...result } = user;
-
-    return {
-      ...result,
-      accessToken: this.jwtService.sign({ sub: user.id, email: user.email, role: user.role }),
-    };
+    return this.toAuthResponse(user);
   }
 
-  async validateUserById(userId: string): Promise<User | null> {
+  validateUserById(userId: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id: userId } });
   }
 
   async getProfile(userId: string) {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.validateUserById(userId);
     if (!user) {
       throw new UnauthorizedException();
     }
-    const { password, ...result } = user;
-    return result;
+    return user;
   }
 }
-
-

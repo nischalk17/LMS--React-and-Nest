@@ -29,7 +29,7 @@ export class Course {
   @Column({ default: true })
   isPublished: boolean;
 
-  @ManyToOne(() => User, (user) => user.courses)
+  @ManyToOne(() => User, (user) => user.courses, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'instructorId' })
   instructor: User;
 

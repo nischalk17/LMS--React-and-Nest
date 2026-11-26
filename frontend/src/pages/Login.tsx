@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { z } from 'zod';
@@ -63,8 +64,8 @@ const Login = () => {
       setLoginError(null);
       await login(values.email, values.password);
       navigate('/dashboard');
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Login failed';
+    } catch (err) {
+      const message = getErrorMessage(err, 'Login failed');
       setLoginError(message);
       form.setError('email', { message });
     }

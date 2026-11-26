@@ -82,7 +82,7 @@ const CourseCatalog = () => {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Course Catalog</h1>
           <p className="text-sm text-slate-600">
-            Browse published courses. Pagination now shows 6 courses per page.
+            Browse published courses and enroll to start learning.
           </p>
         </div>
       </div>

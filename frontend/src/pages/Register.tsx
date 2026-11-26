@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { z } from 'zod';
@@ -58,8 +59,8 @@ const Register = () => {
     try {
       await registerUser(values);
       navigate('/dashboard');
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Registration failed';
+    } catch (err) {
+      const message = getErrorMessage(err, 'Registration failed');
       form.setError('email', { message });
     }
   };

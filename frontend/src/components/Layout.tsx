@@ -19,6 +19,7 @@ const Layout = () => {
     ...(user?.role === 'instructor'
       ? [{ to: '/instructor/courses', label: 'My Courses' }]
       : []),
+    ...(user?.role === 'admin' ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 
   return (

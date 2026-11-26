@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../contexts/AuthContext';
+import { questionService, Question } from '../services/questionService';
+import { getErrorMessage } from '../utils/errors';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import {
@@ -15,103 +17,87 @@ import {
 } from './ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
-export interface Question {
-  id: string;
-  courseId: string;
-  studentId: string;
-  studentName: string;
-  question: string;
-  answer?: string;
-  answeredBy?: string;
-  createdAt: Date;
-  answeredAt?: Date;
-}
-
 interface QuestionsSectionProps {
   courseId: string;
+  /** True when the signed-in user is this course's instructor. */
+  isInstructor: boolean;
 }
 
 const questionSchema = z.object({
-  question: z.string().min(5, 'Ask a descriptive question.'),
+  body: z.string().trim().min(5, 'Ask a descriptive question.').max(2000),
 });
 
-const answerSchema = z.object({
-  answer: z.string().min(3, 'Answer cannot be empty.'),
-});
+const fullName = (p: { firstName: string; lastName: string }) =>
+  `${p.firstName} ${p.lastName}`;
 
-const QuestionsSection = ({ courseId }: QuestionsSectionProps) => {
+const QuestionsSection = ({ courseId, isInstructor }: QuestionsSectionProps) => {
   const { user } = useAuth();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [answerText, setAnswerText] = useState<Record<string, string>>({});
 
   const form = useForm<z.infer<typeof questionSchema>>({
     resolver: zodResolver(questionSchema),
-    defaultValues: { question: '' },
+    defaultValues: { body: '' },
   });
 
-  useEffect(() => {
-    const stored = localStorage.getItem(`questions_${courseId}`);
-    if (stored) {
-      setQuestions(JSON.parse(stored));
+  const load = useCallback(async () => {
+    try {
+      setQuestions(await questionService.list(courseId));
+      setError('');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not load questions'));
+    } finally {
+      setLoading(false);
     }
   }, [courseId]);
 
-  const handleSubmitQuestion = (values: z.infer<typeof questionSchema>) => {
-    if (!user) return;
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-    const question: Question = {
-      id: Date.now().toString(),
-      courseId,
-      studentId: user.id,
-      studentName: `${user.firstName} ${user.lastName}`,
-      question: values.question,
-      createdAt: new Date(),
-    };
-
-    const updated = [question, ...questions];
-    setQuestions(updated);
-    localStorage.setItem(`questions_${courseId}`, JSON.stringify(updated));
-    form.reset();
+  const handleAsk = async (values: z.infer<typeof questionSchema>) => {
+    try {
+      const created = await questionService.ask(courseId, values.body);
+      setQuestions((prev) => [created, ...prev]);
+      form.reset();
+    } catch (err) {
+      form.setError('body', {
+        message: getErrorMessage(err, 'Could not post your question'),
+      });
+    }
   };
 
-  const handleSubmitAnswer = (questionId: string) => {
-    if (!user) return;
-
-    const parsed = answerSchema.safeParse({ answer: answerText[questionId] });
-    if (!parsed.success) return;
-
-    const updated = questions.map((q) =>
-      q.id === questionId
-        ? {
-            ...q,
-            answer: parsed.data.answer,
-            answeredBy: `${user.firstName} ${user.lastName}`,
-            answeredAt: new Date(),
-          }
-        : q
-    );
-
-    setQuestions(updated);
-    localStorage.setItem(`questions_${courseId}`, JSON.stringify(updated));
-    setAnswerText({ ...answerText, [questionId]: '' });
+  const handleAnswer = async (questionId: string) => {
+    const answer = (answerText[questionId] ?? '').trim();
+    if (answer.length < 2) return;
+    try {
+      const updated = await questionService.answer(questionId, answer);
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === questionId ? updated : q))
+      );
+      setAnswerText((prev) => ({ ...prev, [questionId]: '' }));
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not save the answer'));
+    }
   };
-
-  if (user?.role !== 'student' && user?.role !== 'instructor') {
-    return null;
-  }
 
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <CardTitle className="text-xl">Questions & Answers</CardTitle>
+        <CardTitle className="text-xl">Questions &amp; Answers</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {user?.role === 'student' && (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmitQuestion)} className="space-y-3">
+            <form
+              onSubmit={form.handleSubmit(handleAsk)}
+              className="space-y-3"
+            >
               <FormField
                 control={form.control}
-                name="question"
+                name="body"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Your question</FormLabel>
@@ -126,58 +112,68 @@ const QuestionsSection = ({ courseId }: QuestionsSectionProps) => {
                   </FormItem>
                 )}
               />
-              <Button type="submit">Ask question</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                Ask question
+              </Button>
             </form>
           </Form>
         )}
 
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
         <div className="space-y-4">
-          {questions.length === 0 ? (
+          {loading ? (
+            <p className="text-sm text-slate-600">Loading questions...</p>
+          ) : questions.length === 0 ? (
             <p className="text-sm text-slate-600">
-              No questions yet. Be the first to ask!
+              No questions yet.{' '}
+              {user?.role === 'student' ? 'Be the first to ask!' : ''}
             </p>
           ) : (
-            questions.map((question) => (
+            questions.map((q) => (
               <div
-                key={question.id}
+                key={q.id}
                 className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between text-sm text-slate-700">
                   <div className="font-semibold text-slate-900">
-                    {question.studentName}
+                    {fullName(q.author)}
                   </div>
                   <span className="text-xs text-slate-500">
-                    {new Date(question.createdAt).toLocaleDateString()}
+                    {new Date(q.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-slate-800">{question.question}</p>
+                <p className="whitespace-pre-wrap text-slate-800">{q.body}</p>
 
-                {question.answer ? (
+                {q.answer ? (
                   <div className="space-y-1 rounded-md bg-slate-50 p-3">
                     <div className="text-sm font-semibold text-slate-900">
-                      Instructor: {question.answeredBy}
+                      Instructor{q.answeredBy ? `: ${fullName(q.answeredBy)}` : ''}
                     </div>
-                    <p className="text-sm text-slate-700">{question.answer}</p>
-                    {question.answeredAt && (
+                    <p className="whitespace-pre-wrap text-sm text-slate-700">
+                      {q.answer}
+                    </p>
+                    {q.answeredAt && (
                       <span className="text-xs text-slate-500">
-                        Answered on {new Date(question.answeredAt).toLocaleDateString()}
+                        Answered on{' '}
+                        {new Date(q.answeredAt).toLocaleDateString()}
                       </span>
                     )}
                   </div>
-                ) : user?.role === 'instructor' ? (
+                ) : isInstructor ? (
                   <div className="space-y-2">
                     <Textarea
                       rows={3}
                       placeholder="Write your answer..."
-                      value={answerText[question.id] || ''}
+                      value={answerText[q.id] ?? ''}
                       onChange={(e) =>
-                        setAnswerText({ ...answerText, [question.id]: e.target.value })
+                        setAnswerText((prev) => ({
+                          ...prev,
+                          [q.id]: e.target.value,
+                        }))
                       }
                     />
-                    <Button
-                      size="sm"
-                      onClick={() => handleSubmitAnswer(question.id)}
-                    >
+                    <Button size="sm" onClick={() => void handleAnswer(q.id)}>
                       Submit Answer
                     </Button>
                   </div>
@@ -196,4 +192,3 @@ const QuestionsSection = ({ courseId }: QuestionsSectionProps) => {
 };
 
 export default QuestionsSection;
-

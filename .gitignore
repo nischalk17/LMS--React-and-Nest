@@ -1,10 +1,18 @@
-# AI-generated / scratch docs (kept locally, not published)
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+.DS_Store
+
+# Private study notes and scratch docs (kept locally, not published)
+STUDY_GUIDE.md
 CHANGELOG.md
 COMMANDS.md
 FIXES_APPLIED.md
 QUICK_START.md
 RUN_ME_FIRST.md
 SETUP.md
-docs/*
-!docs/AUDIT.md
-STUDY_GUIDE.md
+docs/

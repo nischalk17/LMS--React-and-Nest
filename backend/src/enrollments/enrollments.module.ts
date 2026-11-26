@@ -8,7 +8,9 @@ import { Module as ModuleEntity } from '../entities/module.entity';
 import { Progress } from '../entities/progress.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Enrollment, Course, ModuleEntity, Progress])],
+  imports: [
+    TypeOrmModule.forFeature([Enrollment, Course, ModuleEntity, Progress]),
+  ],
   controllers: [EnrollmentsController],
   providers: [EnrollmentsService],
 })

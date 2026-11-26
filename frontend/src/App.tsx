@@ -9,6 +9,7 @@ import CourseDetail from './pages/CourseDetail';
 import InstructorCourses from './pages/InstructorCourses';
 import CreateCourse from './pages/CreateCourse';
 import EditCourse from './pages/EditCourse';
+import AdminDashboard from './pages/AdminDashboard';
 import Layout from './components/Layout';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,24 @@ function InstructorRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <Router>
@@ -57,6 +76,14 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="courses" element={<CourseCatalog />} />
           <Route path="courses/:id" element={<CourseDetail />} />
+          <Route
+            path="admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
           <Route
             path="instructor/courses"
             element={

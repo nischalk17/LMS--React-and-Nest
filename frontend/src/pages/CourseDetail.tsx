@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { courseService, Course, Module } from '../services/courseService';
@@ -54,8 +55,8 @@ const CourseDetail = () => {
       await enrollmentService.enroll(id);
       setIsEnrolled(true);
       navigate('/dashboard');
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to enroll');
+    } catch (error) {
+      alert(getErrorMessage(error, 'Failed to enroll'));
     } finally {
       setEnrolling(false);
     }
@@ -267,8 +268,11 @@ const CourseDetail = () => {
         </div>
       )}
 
-      {(isEnrolled || user?.role === 'instructor') && (
-        <QuestionsSection courseId={id || ''} />
+      {course && (isEnrolled || (user?.role === 'instructor' && course.instructor.id === user.id)) && (
+        <QuestionsSection
+          courseId={course.id}
+          isInstructor={user?.role === 'instructor'}
+        />
       )}
     </div>
   );

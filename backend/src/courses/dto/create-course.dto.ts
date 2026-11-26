@@ -17,5 +17,3 @@ export class CreateCourseDto {
   @IsOptional()
   isPublished?: boolean;
 }
-
-

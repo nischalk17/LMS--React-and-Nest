@@ -17,14 +17,16 @@ export class Progress {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Enrollment, (enrollment) => enrollment.progress)
+  @ManyToOne(() => Enrollment, (enrollment) => enrollment.progress, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'enrollmentId' })
   enrollment: Enrollment;
 
   @Column()
   enrollmentId: string;
 
-  @ManyToOne(() => Module)
+  @ManyToOne(() => Module, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'moduleId' })
   module: Module;
 
@@ -43,5 +45,3 @@ export class Progress {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-
-

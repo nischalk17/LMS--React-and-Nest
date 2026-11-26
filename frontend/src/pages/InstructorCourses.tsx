@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
+import { getErrorMessage } from '../utils/errors';
 import { Link } from 'react-router-dom';
-import { courseService, Course } from '../services/courseService';
+import {
+  courseService,
+  analyticsService,
+  Course,
+  CourseAnalytics,
+} from '../services/courseService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -8,12 +14,17 @@ import { Badge } from '../components/ui/badge';
 const InstructorCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Record<string, CourseAnalytics>>({});
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const data = await courseService.getAll(false);
+        const [data, analytics] = await Promise.all([
+          courseService.getAll(false),
+          analyticsService.getMine(),
+        ]);
         setCourses(data);
+        setStats(Object.fromEntries(analytics.map((a) => [a.courseId, a])));
       } catch (error) {
         console.error('Failed to fetch courses:', error);
       } finally {
@@ -32,8 +43,8 @@ const InstructorCourses = () => {
     try {
       await courseService.delete(id);
       setCourses(courses.filter((c) => c.id !== id));
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to delete course');
+    } catch (error) {
+      alert(getErrorMessage(error, 'Failed to delete course'));
     }
   };
 
@@ -83,9 +94,18 @@ const InstructorCourses = () => {
                 <CardDescription>{course.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">
-                  {course.modules?.length || 0} modules
-                </span>
+                <div className="space-y-1 text-sm text-slate-600">
+                  <div>{course.modules?.length || 0} modules</div>
+                  <div>
+                    {stats[course.id]?.students ?? 0} students ·{' '}
+                    {stats[course.id]?.averageProgress ?? 0}% avg progress
+                  </div>
+                  {(stats[course.id]?.unansweredQuestions ?? 0) > 0 && (
+                    <div className="font-medium text-amber-600">
+                      {stats[course.id].unansweredQuestions} unanswered question(s)
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/instructor/courses/${course.id}/edit`}>Edit</Link>

@@ -91,8 +91,11 @@ export class EnrollmentsService {
     }
 
     const totalModules = enrollment.course.modules.length;
-    const completedModules = enrollment.progress.filter((p) => p.isCompleted).length;
-    const overallProgress = totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
+    const completedModules = enrollment.progress.filter(
+      (p) => p.isCompleted,
+    ).length;
+    const overallProgress =
+      totalModules > 0 ? (completedModules / totalModules) * 100 : 0;
 
     return {
       enrollment,
@@ -102,5 +105,3 @@ export class EnrollmentsService {
     };
   }
 }
-
-

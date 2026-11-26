@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../utils/errors';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,8 +42,8 @@ const CreateCourse = () => {
     try {
       const course = await courseService.create(values);
       navigate(`/instructor/courses/${course.id}/edit`);
-    } catch (err: any) {
-      const message = err?.response?.data?.message || 'Failed to create course';
+    } catch (err) {
+      const message = getErrorMessage(err, 'Failed to create course');
       form.setError('title', { message });
     }
   };
