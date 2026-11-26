@@ -57,28 +57,16 @@ erDiagram
 
 ## Quick start
 
-### Option 1: Docker (one command)
-
-```bash
-docker compose up --build
-```
-
-Web: <http://localhost:5173> · API: <http://localhost:3000> · Swagger: <http://localhost:3000/docs>
-
-The API runs migrations and seeds demo data on first boot.
-
-### Option 2: Local development
-
-Requires Node 22+ and a PostgreSQL database.
+Requires Node 22+ and a PostgreSQL database (a free [Neon](https://neon.tech) project works, no local install needed).
 
 ```bash
 # API
 cd backend
-cp .env.example .env        # set JWT_SECRET and DB_* (or DATABASE_URL)
+cp .env.example .env        # set JWT_SECRET and either DATABASE_URL (Neon) or DB_* (local Postgres)
 npm ci
 npm run migration:run       # create tables
 npm run seed                # demo users and courses
-npm run start:dev           # http://localhost:3000
+npm run start:dev           # http://localhost:3000  (Swagger UI: /docs)
 
 # Web (second terminal)
 cd frontend
@@ -86,6 +74,18 @@ cp .env.example .env        # VITE_API_URL=http://localhost:3000
 npm ci
 npm run dev                 # http://localhost:5173
 ```
+
+### Optional: Docker
+
+If you have Docker, one command starts Postgres, the API and the web app (migrations and the demo seed run on first boot):
+
+```bash
+docker compose up --build
+```
+
+Web: <http://localhost:5173> · API: <http://localhost:3000> · Swagger: <http://localhost:3000/docs>
+
+No local Docker? Open the repo in a GitHub Codespace (green **Code** button, then **Codespaces**), which has Docker preinstalled, and run the same command in its terminal.
 
 ## Demo credentials
 
