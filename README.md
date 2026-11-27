@@ -174,3 +174,7 @@ The e2e suite covers registration/login, role checks, ownership (IDOR) checks, d
 - Notifications when a question is answered, and threaded Q&A replies.
 - Server-side pagination for the public catalog (search and paging currently run in the browser, which is fine at this size).
 - Playwright end-to-end tests for the full browser flows.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Nischal Dhoj Kunwar ([@nischalk17](https://github.com/nischalk17)).
