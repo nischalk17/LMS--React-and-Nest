@@ -6,7 +6,12 @@ import { Module } from './entities/module.entity';
 import { Enrollment } from './entities/enrollment.entity';
 import { Progress } from './entities/progress.entity';
 import { Question } from './entities/question.entity';
-import { Quiz, QuizAttempt, QuizQuestion } from './entities/quiz.entity';
+import {
+  Quiz,
+  QuizAttempt,
+  QuizQuestion,
+  QuizResponse,
+} from './entities/quiz.entity';
 
 /** Used by the TypeORM CLI (migrations) and the seed script. */
 const url = process.env.DATABASE_URL;
@@ -35,6 +40,7 @@ export default new DataSource({
     Quiz,
     QuizQuestion,
     QuizAttempt,
+    QuizResponse,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
 });

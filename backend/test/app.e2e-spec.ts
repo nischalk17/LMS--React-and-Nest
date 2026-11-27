@@ -477,7 +477,12 @@ describe('LMS API (e2e)', () => {
       title: 'Module check',
       passingScore: 50,
       questions: [
-        { text: 'What is 2 + 2?', options: ['3', '4', '5'], correctIndex: 1 },
+        {
+          skill: 'Arithmetic',
+          text: 'What is 2 + 2?',
+          options: ['3', '4', '5'],
+          correctIndex: 1,
+        },
         {
           text: 'Capital of France?',
           options: ['Paris', 'Rome'],
@@ -583,6 +588,112 @@ describe('LMS API (e2e)', () => {
         .set(auth(studentToken))
         .expect(200);
       expect(mine.body).toHaveLength(3);
+    });
+
+    it('stores skill tags, defaulting to the course title when none is given', async () => {
+      const res = await request(app.getHttpServer())
+        .get(url())
+        .set(auth(instructorToken))
+        .expect(200);
+      expect(res.body.questions.map((q: { skill: string }) => q.skill)).toEqual(
+        ['Arithmetic', 'NestJS 101'],
+      );
+      // students see the skill too (so the UI can show what is being tested)
+      const asStudent = await request(app.getHttpServer())
+        .get(url())
+        .set(auth(studentToken))
+        .expect(200);
+      expect(asStudent.body.questions[0].skill).toBe('Arithmetic');
+    });
+
+    it('logs one response per question for every attempt', async () => {
+      const db = app.get(DataSource);
+      const rows: {
+        correct: boolean;
+        skill: string;
+        selectedIndex: number;
+        attemptId: string;
+        questionId: string | null;
+      }[] = await db.query(
+        `SELECT r."correct", r."skill", r."selectedIndex", r."attemptId", r."questionId"
+           FROM quiz_responses r
+           JOIN users u ON u.id = r."studentId"
+          WHERE u.email = $1
+          ORDER BY r."createdAt", r."skill"`,
+        ['sam@test.dev'],
+      );
+      // 3 graded attempts x 2 questions
+      expect(rows).toHaveLength(6);
+      expect(new Set(rows.map((r) => r.attemptId)).size).toBe(3);
+      expect(rows.every((r) => r.questionId !== null)).toBe(true);
+      const arithmetic = rows.filter((r) => r.skill === 'Arithmetic');
+      // attempts were [1,0] (all right), [1,1] (first right), [0,1] (first wrong)
+      expect(arithmetic.map((r) => r.correct).sort()).toEqual([
+        false,
+        true,
+        true,
+      ]);
+      expect(arithmetic.find((r) => !r.correct)?.selectedIndex).toBe(0);
+    });
+
+    it('keeps question ids and answer history when a quiz is edited', async () => {
+      const server = app.getHttpServer();
+      const before = await request(server)
+        .get(url())
+        .set(auth(instructorToken))
+        .expect(200);
+      const [first, second] = before.body.questions as {
+        id: string;
+        text: string;
+        options: string[];
+        correctIndex: number;
+      }[];
+
+      const edited = await request(server)
+        .put(url())
+        .set(auth(instructorToken))
+        .send({
+          title: quiz.title,
+          passingScore: 50,
+          questions: [
+            { ...first, text: 'What is two plus two?', skill: 'Arithmetic' },
+            {
+              text: 'A brand new question',
+              options: ['a', 'b'],
+              correctIndex: 0,
+            },
+          ],
+        })
+        .expect(200);
+      expect(edited.body.questions[0].id).toBe(first.id); // same question, new wording
+      expect(edited.body.questions[0].text).toBe('What is two plus two?');
+      expect(edited.body.questions[1].id).not.toBe(second.id);
+
+      // responses to the kept question are still linked; the dropped one is
+      // orphaned (questionId NULL) but its skill snapshot and result survive
+      const db = app.get(DataSource);
+      const kept = await db.query(
+        `SELECT COUNT(*)::int AS n FROM quiz_responses WHERE "questionId" = $1`,
+        [first.id],
+      );
+      expect(kept[0].n).toBe(3);
+      const orphaned = await db.query(
+        `SELECT COUNT(*)::int AS n FROM quiz_responses
+          WHERE "questionId" IS NULL AND "skill" = $1`,
+        ['NestJS 101'],
+      );
+      expect(orphaned[0].n).toBe(3);
+    });
+
+    it('rejects an invalid question id format', async () => {
+      await request(app.getHttpServer())
+        .put(url())
+        .set(auth(instructorToken))
+        .send({
+          ...quiz,
+          questions: [{ ...quiz.questions[0], id: 'not-a-uuid' }],
+        })
+        .expect(400);
     });
 
     it('replaces questions on update and 404s after deletion', async () => {

@@ -8,6 +8,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { Course } from './course.entity';
 import { User } from './user.entity';
@@ -63,6 +64,10 @@ export class QuizQuestion {
   @Column({ type: 'int' })
   correctIndex: number;
 
+  /** Topic this question tests; the unit knowledge tracing reports mastery on. */
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  skill: string | null;
+
   @Column({ type: 'int', default: 0 })
   order: number;
 }
@@ -92,6 +97,54 @@ export class QuizAttempt {
 
   @Column()
   passed: boolean;
+
+  @CreateDateColumn()
+  createdAt: Date;
+}
+
+/**
+ * One row per answered question. This is the training/inference data for
+ * knowledge tracing. The skill is copied here so history survives quiz edits,
+ * and questionId becomes NULL (not deleted) if the question is later removed.
+ */
+@Entity('quiz_responses')
+@Index(['studentId', 'createdAt'])
+export class QuizResponse {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @ManyToOne(() => QuizAttempt, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'attemptId' })
+  attempt: QuizAttempt;
+
+  @Column()
+  attemptId: string;
+
+  @Column()
+  quizId: string;
+
+  @ManyToOne(() => QuizQuestion, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'questionId' })
+  question: QuizQuestion | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  questionId: string | null;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'studentId' })
+  student: User;
+
+  @Column()
+  studentId: string;
+
+  @Column({ type: 'varchar', length: 80 })
+  skill: string;
+
+  @Column({ type: 'int' })
+  selectedIndex: number;
+
+  @Column()
+  correct: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -1,12 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -14,6 +16,14 @@ import {
 } from 'class-validator';
 
 export class QuizQuestionDto {
+  @ApiPropertyOptional({
+    description:
+      'Id of an existing question; keeps its answer history when editing',
+  })
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
   @ApiProperty({ example: 'What does DTO stand for?' })
   @IsString()
   @IsNotEmpty()
@@ -33,6 +43,18 @@ export class QuizQuestionDto {
   @IsInt()
   @Min(0)
   correctIndex: number;
+
+  @ApiPropertyOptional({
+    example: 'Generics',
+    description: 'Topic this question tests (defaults to the course title)',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() || undefined : value,
+  )
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  skill?: string;
 }
 
 export class UpsertQuizDto {

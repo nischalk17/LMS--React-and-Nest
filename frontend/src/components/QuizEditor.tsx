@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 
 const emptyQuestion = () => ({
   text: '',
+  skill: '',
   options: ['', ''],
   correctIndex: 0,
 });
@@ -36,7 +37,9 @@ const QuizEditor = ({ courseId }: { courseId: string }) => {
             title: quiz.title,
             passingScore: quiz.passingScore,
             questions: quiz.questions.map((q) => ({
+              id: q.id,
               text: q.text,
+              skill: q.skill ?? '',
               options: q.options,
               correctIndex: q.correctIndex ?? 0,
             })),
@@ -165,6 +168,13 @@ const QuizEditor = ({ courseId }: { courseId: string }) => {
                 Remove
               </Button>
             </div>
+            <Input
+              placeholder="Skill / topic tested (optional, defaults to the course title)"
+              aria-label={`Skill tested by question ${qi + 1}`}
+              maxLength={80}
+              value={q.skill ?? ''}
+              onChange={(e) => updateQuestion(qi, { skill: e.target.value })}
+            />
             {q.options.map((option, oi) => (
               <div key={oi} className="flex items-center gap-2 pl-2">
                 <input

@@ -129,50 +129,119 @@ async function main() {
     console.log(`Seeded course ${i + 1}: ${data.title}`);
   }
 
-  // demo quiz on the first course
-  const tsCourse = await courseRepo.findOne({
-    where: { title: 'TypeScript Fundamentals' },
-  });
-  if (
-    tsCourse &&
-    !(await dataSource
-      .getRepository(Quiz)
-      .exists({ where: { courseId: tsCourse.id } }))
-  ) {
-    const quiz = await dataSource.getRepository(Quiz).save(
-      dataSource.getRepository(Quiz).create({
-        courseId: tsCourse.id,
-        title: 'TypeScript basics check',
-        passingScore: 60,
+  // demo quizzes; every question carries a skill tag for knowledge tracing
+  const demoQuizzes = [
+    {
+      courseTitle: 'TypeScript Fundamentals',
+      title: 'TypeScript basics check',
+      passingScore: 60,
+      questions: [
+        {
+          skill: 'Static typing',
+          text: 'What does TypeScript add to JavaScript?',
+          options: ['Static types', 'A new runtime', 'A database'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Static typing',
+          text: 'When are TypeScript type errors reported?',
+          options: ['At compile time', 'Only in production', 'Never'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Interfaces',
+          text: 'Which keyword declares a reusable object shape?',
+          options: ['interface', 'import', 'await'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Interfaces',
+          text: 'Can a class implement an interface?',
+          options: ['Yes', 'No'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Generics',
+          text: 'What does function id<T>(x: T): T use?',
+          options: ['A decorator', 'A generic', 'A namespace'],
+          correctIndex: 1,
+        },
+        {
+          skill: 'Generics',
+          text: 'What does Array<string> mean?',
+          options: ['An array of strings', 'A string of arrays'],
+          correctIndex: 0,
+        },
+      ],
+    },
+    {
+      courseTitle: 'Intro to REST APIs with NestJS',
+      title: 'NestJS essentials',
+      passingScore: 60,
+      questions: [
+        {
+          skill: 'Modules and providers',
+          text: 'Which building block holds business logic in Nest?',
+          options: ['A provider (service)', 'A pipe', 'A guard'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Modules and providers',
+          text: 'Which class handles incoming HTTP routes?',
+          options: ['Controller', 'Repository'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Validation',
+          text: 'Which library validates DTO classes in Nest?',
+          options: ['class-validator', 'lodash', 'axios'],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Validation',
+          text: 'What does whitelist: true do in ValidationPipe?',
+          options: [
+            'Strips properties without decorators',
+            'Allows every property',
+            'Disables validation',
+          ],
+          correctIndex: 0,
+        },
+        {
+          skill: 'Authentication',
+          text: 'What does a JWT guard check?',
+          options: ['A signed token on the request', 'The database schema'],
+          correctIndex: 0,
+        },
+      ],
+    },
+  ];
+
+  for (const demo of demoQuizzes) {
+    const course = await courseRepo.findOne({
+      where: { title: demo.courseTitle },
+    });
+    const quizRepo = dataSource.getRepository(Quiz);
+    if (
+      !course ||
+      (await quizRepo.exists({ where: { courseId: course.id } }))
+    ) {
+      continue;
+    }
+    const quiz = await quizRepo.save(
+      quizRepo.create({
+        courseId: course.id,
+        title: demo.title,
+        passingScore: demo.passingScore,
       }),
     );
-    const questions = [
-      {
-        text: 'What does TypeScript add to JavaScript?',
-        options: ['Static types', 'A new runtime', 'A database'],
-        correctIndex: 0,
-      },
-      {
-        text: 'Which keyword declares a reusable object shape?',
-        options: ['interface', 'import', 'await'],
-        correctIndex: 0,
-      },
-      {
-        text: 'What does function id<T>(x: T): T use?',
-        options: ['A decorator', 'A generic', 'A namespace'],
-        correctIndex: 1,
-      },
-    ];
-    await dataSource
-      .getRepository(QuizQuestion)
-      .save(
-        questions.map((q, order) =>
-          dataSource
-            .getRepository(QuizQuestion)
-            .create({ ...q, order, quizId: quiz.id }),
-        ),
-      );
-    console.log('Seeded demo quiz');
+    const questionRepo = dataSource.getRepository(QuizQuestion);
+    await questionRepo.save(
+      demo.questions.map((q, order) =>
+        questionRepo.create({ ...q, order, quizId: quiz.id }),
+      ),
+    );
+    console.log(`Seeded quiz: ${demo.title}`);
   }
 
   console.log(`Done. Demo logins (password "${DEMO_PASSWORD}"):`);
