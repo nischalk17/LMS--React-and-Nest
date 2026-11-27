@@ -9,10 +9,12 @@ A full-stack learning platform where instructors publish courses made of text, v
 - **Students:** browse the published catalog, enroll, open lessons, mark modules complete, and see per-course progress on a dashboard.
 - **Instructor analytics:** per course, enrolled students, average progress and unanswered questions.
 - **Admin:** a dashboard with platform stats, a searchable and paginated user list (change roles, delete users) and course moderation (unpublish, delete). Admins cannot change or delete themselves.
+- **Quizzes:** instructors build one multiple-choice quiz per course (passing score, 2-6 options per question); enrolled students take it, get an instant score and per-question feedback, and keep an attempt history. The answer key never reaches students.
 - **Course Q&A:** enrolled students ask questions on a course; only that course's instructor can answer. Non-members get a 403.
-- **Access rules:** drafts are visible only to their owner; lesson content stays hidden until the student enrolls.
+- **Access rules:** drafts are visible only to their owner and admins; lesson content stays hidden until the student enrolls (students keep access if a course is later unpublished).
+- **Hardening:** password hashes never leave the API, module links must be http(s) (blocks `javascript:` URLs), validated UUID params, rate limiting that works behind a proxy, Helmet, atomic enrollment with proper 409s on double-clicks, and a required 32+ character `JWT_SECRET` in production.
 - **Dark mode**, form validation (zod + React Hook Form), password visibility toggle.
-- **API docs:** Swagger UI at `/docs`.
+- **API docs:** Swagger UI at `/docs`; `/health` also checks the database.
 
 ## Tech stack
 
@@ -44,12 +46,19 @@ erDiagram
   ENROLLMENT ||--o{ PROGRESS : tracks
   COURSE ||--o{ QUESTION : "Q&A"
   USER ||--o{ QUESTION : asks
+  COURSE ||--o| QUIZ : has
+  QUIZ ||--o{ QUIZ_QUESTION : contains
+  QUIZ ||--o{ QUIZ_ATTEMPT : "graded attempts"
+  USER ||--o{ QUIZ_ATTEMPT : takes
   MODULE ||--o{ PROGRESS : "progress on"
   USER { uuid id PK; string email UK; string password; enum role "student, instructor, admin" }
   COURSE { uuid id PK; string title; text description; bool isPublished }
   MODULE { uuid id PK; string title; enum type; int order }
   ENROLLMENT { uuid id PK; uuid studentId; uuid courseId }
   QUESTION { uuid id PK; text body; text answer; timestamp answeredAt }
+  QUIZ { uuid id PK; string title; int passingScore }
+  QUIZ_QUESTION { uuid id PK; text text; jsonb options; int correctIndex }
+  QUIZ_ATTEMPT { uuid id PK; int score; bool passed }
   PROGRESS { uuid id PK; bool isCompleted; float completionPercentage }
 ```
 
@@ -94,8 +103,8 @@ Created by the seed script (password for both: `Password123!`):
 | Role | Email |
 |---|---|
 | Instructor | `instructor@lms.dev` |
-| Admin | `admin@lms.dev` |
 | Student | `student@lms.dev` |
+| Admin | `admin@lms.dev` (created locally; in production only when `SEED_ADMIN_PASSWORD` is set) |
 
 Anyone can also register as a student or an instructor. Choosing the instructor role at sign-up is a demo shortcut; a production system would not allow it. The admin role cannot be chosen at registration.
 
@@ -104,22 +113,23 @@ Anyone can also register as a student or an instructor. Choosing the instructor 
 ```bash
 cd backend
 npm run lint && npm run typecheck
-npm test                    # unit tests (auth, progress services)
+npm test                    # unit tests (auth, progress, env validation)
 npm run test:e2e            # API flows against a real Postgres (TEST_DB_* env vars, default lms_test on localhost:5432)
-cd ../frontend && npm run lint && npm run build
+cd ../frontend && npm run lint && npm test && npm run build   # UI tests: Vitest + Testing Library
 ```
 
-The e2e suite covers registration/login, role checks, ownership (IDOR) checks, draft visibility, enrollment, content gating, progress tracking, Q&A permissions, instructor analytics, and admin moderation. CI runs all of the above on every push.
+The e2e suite covers registration/login, role checks, ownership (IDOR) checks, draft visibility, enrollment, content gating, progress tracking, quizzes (grading, answer-key secrecy), Q&A permissions, instructor analytics, admin moderation, and concurrency edge cases (double enroll, double sign-up). CI runs all of the above on every push.
 
 ## Deployment (free tier)
 
 - **Database:** Neon (free Postgres). Use its connection string as `DATABASE_URL`.
-- **API:** Render web service, root `backend`, build `npm ci && npm run build`, start `node dist/seed.js && node dist/main`. Env: `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL` (your Vercel URL), `NODE_ENV=production`. Health check path: `/health`. The free tier sleeps when idle, so the first request can take about a minute.
+- **API:** Render web service, root `backend`, build `npm ci && npm run build`, start `node dist/seed.js && node dist/main`. Env: `DATABASE_URL`, `JWT_SECRET` (32+ characters), `FRONTEND_URL` (your Vercel URL), `NODE_ENV=production`, and optionally `SEED_ADMIN_PASSWORD` to create `admin@lms.dev` (skipped otherwise, so a public site never ships a well-known admin password). Health check path: `/health`. The free tier sleeps when idle, so the first request can take about a minute.
 - **Web:** Vercel, root `frontend`, framework Vite, env `VITE_API_URL` set to the Render URL.
 
 ## What I'd do next
 
-- Quizzes; notifications when a question is answered; threaded replies on Q&A.
-- Refresh tokens with httpOnly cookies instead of a token in localStorage.
-- File uploads for PDFs and thumbnails; server-side pagination for the public catalog (search and paging are currently done in the browser).
-- Component tests and Playwright end-to-end tests for the UI.
+- Refresh tokens in httpOnly cookies instead of a token in localStorage (needs `SameSite=None` cookies and CSRF handling because the web app and API live on different domains).
+- File uploads for PDFs and thumbnails (needs external object storage; free hosts have ephemeral disks).
+- Notifications when a question is answered, and threaded Q&A replies.
+- Server-side pagination for the public catalog (search and paging currently run in the browser, which is fine at this size).
+- Playwright end-to-end tests for the full browser flows.

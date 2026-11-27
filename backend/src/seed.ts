@@ -3,6 +3,7 @@ import dataSource from './data-source';
 import { User, UserRole } from './entities/user.entity';
 import { Course } from './entities/course.entity';
 import { Module, ModuleType } from './entities/module.entity';
+import { Quiz, QuizQuestion } from './entities/quiz.entity';
 
 const DEMO_PASSWORD = 'Password123!';
 
@@ -11,6 +12,7 @@ async function upsertUser(
   firstName: string,
   lastName: string,
   role: UserRole,
+  password = DEMO_PASSWORD,
 ) {
   const repo = dataSource.getRepository(User);
   const existing = await repo.findOne({ where: { email } });
@@ -21,7 +23,7 @@ async function upsertUser(
       firstName,
       lastName,
       role,
-      password: await bcrypt.hash(DEMO_PASSWORD, 10),
+      password: await bcrypt.hash(password, 10),
     }),
   );
 }
@@ -36,7 +38,24 @@ async function main() {
     'Instructor',
     UserRole.INSTRUCTOR,
   );
-  await upsertUser('admin@lms.dev', 'Ada', 'Admin', UserRole.ADMIN);
+  // A public deployment must not ship an admin with a well-known password:
+  // in production the admin is only created when SEED_ADMIN_PASSWORD is set.
+  const adminPassword =
+    process.env.SEED_ADMIN_PASSWORD ||
+    (process.env.NODE_ENV === 'production' ? undefined : DEMO_PASSWORD);
+  if (adminPassword) {
+    await upsertUser(
+      'admin@lms.dev',
+      'Ada',
+      'Admin',
+      UserRole.ADMIN,
+      adminPassword,
+    );
+  } else {
+    console.log(
+      'Skipping admin: set SEED_ADMIN_PASSWORD to create admin@lms.dev',
+    );
+  }
   await upsertUser('student@lms.dev', 'Sam', 'Student', UserRole.STUDENT);
 
   const courseRepo = dataSource.getRepository(Course);
@@ -110,10 +129,62 @@ async function main() {
     console.log(`Seeded course ${i + 1}: ${data.title}`);
   }
 
+  // demo quiz on the first course
+  const tsCourse = await courseRepo.findOne({
+    where: { title: 'TypeScript Fundamentals' },
+  });
+  if (
+    tsCourse &&
+    !(await dataSource
+      .getRepository(Quiz)
+      .exists({ where: { courseId: tsCourse.id } }))
+  ) {
+    const quiz = await dataSource.getRepository(Quiz).save(
+      dataSource.getRepository(Quiz).create({
+        courseId: tsCourse.id,
+        title: 'TypeScript basics check',
+        passingScore: 60,
+      }),
+    );
+    const questions = [
+      {
+        text: 'What does TypeScript add to JavaScript?',
+        options: ['Static types', 'A new runtime', 'A database'],
+        correctIndex: 0,
+      },
+      {
+        text: 'Which keyword declares a reusable object shape?',
+        options: ['interface', 'import', 'await'],
+        correctIndex: 0,
+      },
+      {
+        text: 'What does function id<T>(x: T): T use?',
+        options: ['A decorator', 'A generic', 'A namespace'],
+        correctIndex: 1,
+      },
+    ];
+    await dataSource
+      .getRepository(QuizQuestion)
+      .save(
+        questions.map((q, order) =>
+          dataSource
+            .getRepository(QuizQuestion)
+            .create({ ...q, order, quizId: quiz.id }),
+        ),
+      );
+    console.log('Seeded demo quiz');
+  }
+
   console.log(`Done. Demo logins (password "${DEMO_PASSWORD}"):`);
   console.log('  instructor@lms.dev  (instructor)');
   console.log('  student@lms.dev     (student)');
-  console.log('  admin@lms.dev       (admin)');
+  if (adminPassword) {
+    console.log(
+      adminPassword === DEMO_PASSWORD
+        ? '  admin@lms.dev       (admin)'
+        : '  admin@lms.dev       (admin, password = SEED_ADMIN_PASSWORD)',
+    );
+  }
   await dataSource.destroy();
 }
 

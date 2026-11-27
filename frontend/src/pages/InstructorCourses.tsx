@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ErrorMessage from '../components/ErrorMessage';
 import { getErrorMessage } from '../utils/errors';
 import { Link } from 'react-router-dom';
 import {
@@ -14,6 +15,7 @@ import { Badge } from '../components/ui/badge';
 const InstructorCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [stats, setStats] = useState<Record<string, CourseAnalytics>>({});
 
   useEffect(() => {
@@ -26,7 +28,7 @@ const InstructorCourses = () => {
         setCourses(data);
         setStats(Object.fromEntries(analytics.map((a) => [a.courseId, a])));
       } catch (error) {
-        console.error('Failed to fetch courses:', error);
+        setLoadError(getErrorMessage(error, 'Could not load your courses'));
       } finally {
         setLoading(false);
       }
@@ -58,6 +60,7 @@ const InstructorCourses = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && <ErrorMessage message={loadError} />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">My Courses</h1>

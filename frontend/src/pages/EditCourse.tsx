@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import QuizEditor from '../components/QuizEditor';
+import ErrorMessage from '../components/ErrorMessage';
 import { getErrorMessage } from '../utils/errors';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -41,6 +43,7 @@ const EditCourse = () => {
     order: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -68,7 +71,7 @@ const EditCourse = () => {
           });
         }
       } catch (error) {
-        console.error('Failed to fetch course:', error);
+        setLoadError(getErrorMessage(error, 'Could not load the course'));
       } finally {
         setLoading(false);
       }
@@ -155,6 +158,7 @@ const EditCourse = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && <ErrorMessage message={loadError} />}
       <Card className="shadow-brand">
         <CardHeader>
           <CardTitle className="text-2xl">Edit Course</CardTitle>
@@ -401,6 +405,8 @@ const EditCourse = () => {
           </div>
         </CardContent>
       </Card>
+
+      {id && <QuizEditor courseId={id} />}
     </div>
   );
 };

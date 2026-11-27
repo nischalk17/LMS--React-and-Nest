@@ -105,15 +105,16 @@ const Login = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
+                    <div className="relative">
+                        <FormControl>
+                          <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
                           className="pr-10"
                           {...field}
                         />
+                        </FormControl>
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -127,7 +128,6 @@ const Login = () => {
                           )}
                         </button>
                       </div>
-                    </FormControl>
                     <div className="space-y-2">
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
                         <div

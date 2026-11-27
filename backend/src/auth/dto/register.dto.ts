@@ -3,6 +3,7 @@ import {
   IsEmail,
   IsString,
   MinLength,
+  MaxLength,
   IsIn,
   IsOptional,
   IsNotEmpty,
@@ -17,6 +18,7 @@ export class RegisterDto {
   @ApiProperty({ minLength: 6 })
   @IsString()
   @MinLength(6)
+  @MaxLength(72) // bcrypt ignores everything after 72 bytes
   password: string;
 
   @ApiProperty()

@@ -1,4 +1,7 @@
+import { Transform } from 'class-transformer';
 import {
+  IsUrl,
+  MaxLength,
   IsString,
   IsNotEmpty,
   IsEnum,
@@ -10,6 +13,7 @@ import { ModuleType } from '../../entities/module.entity';
 export class CreateModuleDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   title: string;
 
   @IsString()
@@ -19,12 +23,14 @@ export class CreateModuleDto {
   @IsEnum(ModuleType)
   type: ModuleType;
 
-  @IsString()
+  @Transform(({ value }: { value: unknown }) => (value === '' ? null : value))
   @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   videoUrl?: string;
 
-  @IsString()
+  @Transform(({ value }: { value: unknown }) => (value === '' ? null : value))
   @IsOptional()
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   pdfUrl?: string;
 
   @IsNumber()

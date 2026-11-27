@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import ErrorMessage from '../components/ErrorMessage';
+import { getErrorMessage } from '../utils/errors';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
@@ -10,6 +12,7 @@ const Dashboard = () => {
   const { user } = useAuth();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     const fetchEnrollments = async () => {
@@ -17,7 +20,7 @@ const Dashboard = () => {
         const data = await enrollmentService.getMyEnrollments();
         setEnrollments(data);
       } catch (error) {
-        console.error('Failed to fetch enrollments:', error);
+        setLoadError(getErrorMessage(error, 'Could not load your courses'));
       } finally {
         setLoading(false);
       }
@@ -71,6 +74,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && <ErrorMessage message={loadError} />}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Welcome, {user?.firstName}!</h1>

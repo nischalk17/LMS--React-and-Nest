@@ -6,6 +6,7 @@ import { Module } from './entities/module.entity';
 import { Enrollment } from './entities/enrollment.entity';
 import { Progress } from './entities/progress.entity';
 import { Question } from './entities/question.entity';
+import { Quiz, QuizAttempt, QuizQuestion } from './entities/quiz.entity';
 
 /** Used by the TypeORM CLI (migrations) and the seed script. */
 const url = process.env.DATABASE_URL;
@@ -24,6 +25,16 @@ export default new DataSource({
         database: process.env.DB_NAME ?? 'lms_db',
       }),
   ssl: useSsl ? { rejectUnauthorized: false } : false,
-  entities: [User, Course, Module, Enrollment, Progress, Question],
+  entities: [
+    User,
+    Course,
+    Module,
+    Enrollment,
+    Progress,
+    Question,
+    Quiz,
+    QuizQuestion,
+    QuizAttempt,
+  ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
 });

@@ -22,7 +22,10 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
-    if (error.response?.status === 401) {
+    // A 401 from the login/register forms just means "wrong credentials": show the
+    // message instead of reloading the page. Any other 401 means the session expired.
+    const isAuthForm = /\/auth\/(login|register)$/.test(error.config?.url ?? '');
+    if (error.response?.status === 401 && !isAuthForm) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

@@ -6,6 +6,7 @@ import { courseService, Course, Module } from '../services/courseService';
 import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { convertToEmbedUrl } from '../utils/videoUtils';
 import QuestionsSection from '../components/QuestionsSection';
+import QuizSection from '../components/QuizSection';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -21,6 +22,8 @@ const CourseDetail = () => {
   const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showModuleViewer, setShowModuleViewer] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [progressError, setProgressError] = useState('');
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -39,7 +42,7 @@ const CourseDetail = () => {
           }
         }
       } catch (error) {
-        console.error('Failed to fetch course:', error);
+        setLoadError(getErrorMessage(error, 'Failed to load the course'));
       } finally {
         setLoading(false);
       }
@@ -71,26 +74,36 @@ const CourseDetail = () => {
   }
 
   if (!course) {
-    return <div>Course not found</div>;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
+        {loadError || 'Course not found'}
+      </div>
+    );
   }
 
-  const handleModuleClick = async (module: Module) => {
-    if (isEnrolled || user?.role === 'instructor') {
-      setSelectedModule(module);
-      setShowModuleViewer(true);
+  const isOwner = user?.id === course.instructor.id;
+  const canView = isEnrolled || isOwner || user?.role === 'admin';
 
-      if (isEnrolled && enrollment && user?.role === 'student') {
-        try {
-          await enrollmentService.updateProgress(enrollment.id, module.id, 100);
-          const enrollments = await enrollmentService.getMyEnrollments();
-          const updatedEnrollment = enrollments.find((e) => e.courseId === id);
-          if (updatedEnrollment) {
-            setEnrollment(updatedEnrollment);
-          }
-        } catch (error) {
-          console.error('Failed to update progress:', error);
-        }
-      }
+  const handleModuleClick = (module: Module) => {
+    if (!canView) return;
+    setProgressError('');
+    setSelectedModule(module);
+    setShowModuleViewer(true);
+  };
+
+  const isModuleCompleted = (moduleId: string) =>
+    !!enrollment?.progress?.some((p) => p.moduleId === moduleId && p.isCompleted);
+
+  const handleMarkComplete = async (module: Module) => {
+    if (!enrollment) return;
+    try {
+      setProgressError('');
+      await enrollmentService.updateProgress(enrollment.id, module.id, 100);
+      const enrollments = await enrollmentService.getMyEnrollments();
+      const updated = enrollments.find((e) => e.courseId === id);
+      if (updated) setEnrollment(updated);
+    } catch (error) {
+      setProgressError(getErrorMessage(error, 'Could not save your progress'));
     }
   };
 
@@ -164,8 +177,8 @@ const CourseDetail = () => {
                   <button
                     key={module.id}
                     onClick={() => handleModuleClick(module)}
-                    className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-primary hover:shadow-md ${isCompleted ? 'bg-emerald-50 border-emerald-200' : ''} ${isEnrolled || user?.role === 'instructor' ? '' : 'cursor-not-allowed opacity-70'}`}
-                    disabled={!(isEnrolled || user?.role === 'instructor')}
+                    className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-primary hover:shadow-md ${isCompleted ? 'bg-emerald-50 border-emerald-200' : ''} ${canView ? '' : 'cursor-not-allowed opacity-70'}`}
+                    disabled={!canView}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -186,7 +199,7 @@ const CourseDetail = () => {
                           </p>
                         </div>
                       </div>
-                      {(isEnrolled || user?.role === 'instructor') && (
+                      {canView && (
                         <span className="text-sm text-primary">
                           {module.type === 'video' && '▶ Watch'}
                           {module.type === 'pdf' && '📄 Open'}
@@ -222,6 +235,21 @@ const CourseDetail = () => {
             <div className="space-y-4 p-6">
               <h2 className="text-xl font-semibold text-slate-900">{selectedModule.title}</h2>
 
+              {isEnrolled && user?.role === 'student' && (
+                <div className="flex items-center gap-3">
+                  {isModuleCompleted(selectedModule.id) ? (
+                    <Badge variant="success">Completed</Badge>
+                  ) : (
+                    <Button size="sm" onClick={() => void handleMarkComplete(selectedModule)}>
+                      Mark as complete
+                    </Button>
+                  )}
+                  {progressError && (
+                    <span className="text-sm text-red-600">{progressError}</span>
+                  )}
+                </div>
+              )}
+
               {selectedModule.type === 'video' && selectedModule.videoUrl && (
                 <div className="space-y-3">
                   <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-200 shadow-sm min-h-[360px] md:min-h-[480px]">
@@ -250,7 +278,7 @@ const CourseDetail = () => {
                   <p className="text-sm text-amber-800">
                     PDF files now open in a new tab for a consistent viewer experience.
                   </p>
-                  <Button onClick={() => window.open(selectedModule.pdfUrl, '_blank')}>
+                  <Button onClick={() => window.open(selectedModule.pdfUrl, '_blank', 'noopener,noreferrer')}>
                     Open PDF in New Tab
                   </Button>
                 </div>
@@ -267,6 +295,8 @@ const CourseDetail = () => {
           </div>
         </div>
       )}
+
+      {isEnrolled && user?.role === 'student' && <QuizSection courseId={course.id} />}
 
       {course && (isEnrolled || (user?.role === 'instructor' && course.instructor.id === user.id)) && (
         <QuestionsSection

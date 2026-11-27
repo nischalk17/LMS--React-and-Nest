@@ -9,6 +9,7 @@ import { Enrollment } from '../entities/enrollment.entity';
 import { Course } from '../entities/course.entity';
 import { Module } from '../entities/module.entity';
 import { Progress } from '../entities/progress.entity';
+import { isUniqueViolation } from '../common/db-errors';
 
 @Injectable()
 export class EnrollmentsService {
@@ -43,31 +44,39 @@ export class EnrollmentsService {
       throw new ConflictException('Already enrolled in this course');
     }
 
-    const enrollment = this.enrollmentRepository.create({
-      studentId,
-      courseId,
-    });
-
-    const savedEnrollment = await this.enrollmentRepository.save(enrollment);
-
-    // Initialize progress for all modules
-    const modules = await this.moduleRepository.find({
-      where: { courseId },
-    });
-
-    const progressEntries = modules.map((module) =>
-      this.progressRepository.create({
-        enrollmentId: savedEnrollment.id,
-        moduleId: module.id,
-        isCompleted: false,
-        completionPercentage: 0,
-      }),
-    );
-
-    await this.progressRepository.save(progressEntries);
+    // Enrollment and its progress rows are created atomically, so a failure
+    // can never leave a half-enrolled student. A concurrent double-click hits the
+    // unique constraint and is reported as 409, not 500.
+    let enrollmentId: string;
+    try {
+      enrollmentId = await this.enrollmentRepository.manager.transaction(
+        async (manager) => {
+          const saved = await manager.save(
+            manager.create(Enrollment, { studentId, courseId }),
+          );
+          const modules = await manager.find(Module, { where: { courseId } });
+          await manager.save(
+            modules.map((module) =>
+              manager.create(Progress, {
+                enrollmentId: saved.id,
+                moduleId: module.id,
+                isCompleted: false,
+                completionPercentage: 0,
+              }),
+            ),
+          );
+          return saved.id;
+        },
+      );
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Already enrolled in this course');
+      }
+      throw err;
+    }
 
     return this.enrollmentRepository.findOne({
-      where: { id: savedEnrollment.id },
+      where: { id: enrollmentId },
       relations: ['course', 'course.modules'],
     });
   }

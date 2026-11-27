@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
+import ErrorMessage from '../components/ErrorMessage';
+import { getErrorMessage } from '../utils/errors';
 import { Link } from 'react-router-dom';
 import { courseService, Course } from '../services/courseService';
 import { Input } from '../components/ui/input';
@@ -10,6 +12,7 @@ import { Badge } from '../components/ui/badge';
 const CourseCatalog = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInstructor, setSelectedInstructor] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,7 +24,7 @@ const CourseCatalog = () => {
         const data = await courseService.getAll(true);
         setCourses(data);
       } catch (error) {
-        console.error('Failed to fetch courses:', error);
+        setLoadError(getErrorMessage(error, 'Could not load courses'));
       } finally {
         setLoading(false);
       }
@@ -78,6 +81,7 @@ const CourseCatalog = () => {
 
   return (
     <div className="space-y-6">
+      {loadError && <ErrorMessage message={loadError} />}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Course Catalog</h1>

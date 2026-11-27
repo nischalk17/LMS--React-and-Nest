@@ -1,46 +1,83 @@
 # Test Report
 
-Run on 2026-11-26, Node 26, PostgreSQL 19 (local, throwaway database).
+Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 
 ## Summary
 
 | Area | Check | Result |
 |---|---|---|
 | Backend | Lint (ESLint + Prettier) | Pass, 0 errors, 0 warnings |
-| Backend | Type check (`tsc --noEmit`) | Pass |
-| Backend | Build (`nest build`) | Pass |
-| Backend | Unit tests (Jest) | **9 / 9 pass** (2 suites) |
-| Backend | E2E tests (Jest + supertest, real Postgres) | **31 / 31 pass** (1 suite) |
-| Backend | Migrations on an empty database, then seed | Pass (`InitialSchema`, `AddQuestions`, `AddAdminRole`; the role migration was also run on a database that already contained seeded data) |
-| Backend | Compiled build (`node dist/main`) smoke test | Pass: `/health` 200, `/docs` 200, 401 without token, no password hash in `/courses` |
-| Frontend | Lint (`--max-warnings 0`) | Pass |
-| Frontend | Type check | Pass |
-| Frontend | Production build (Vite) | Pass |
+| Backend | Type check, build | Pass |
+| Backend | Unit tests (Jest) | **12 / 12 pass** (3 suites) |
+| Backend | E2E tests (Jest + supertest, real Postgres) | **44 / 44 pass** |
+| Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes` |
+| Backend | Compiled build smoke test (`node dist/main`, production mode) | Pass, see "Production smoke checks" |
+| Frontend | Lint (`--max-warnings 0`), type check, production build | Pass |
+| Frontend | UI tests (Vitest + Testing Library, jsdom) | **12 / 12 pass** (4 files) |
 
 ## What the tests cover
 
-**Unit (9):** `AuthService` (password hashed, email lower-cased, default role student, duplicate email rejected, valid/invalid login) and `ProgressService` (enrollment ownership, module must belong to the enrolled course, completed only at 100%).
+**Backend unit (12):** `AuthService` (hashing, lower-cased emails, default role, duplicate email, valid/invalid login), `ProgressService` (enrollment ownership, module must belong to the course, completion at 100%), `validateEnv` (JWT secret required, 32+ characters in production).
 
-**E2E (31), grouped by feature:**
-- **Auth:** health is public; registration never returns the password hash; duplicate email (409) and invalid input (400); wrong password (401) vs correct login; protected routes return 401 without or with a bad token; profile with a valid token.
-- **Roles and ownership:** a student cannot create a course (403); an instructor can create a course and a module; another instructor cannot edit or delete the course or its modules (IDOR checks); a malformed UUID returns 400.
-- **Visibility:** drafts are hidden from students in the list and detail (404); after publishing, the catalog shows the course and leaks no password hash.
-- **Enrollment and progress:** lesson content is hidden before enrolling and visible after; enrolling twice returns 409; progress values of 150, -1 and "abc" are rejected (400); another student cannot read or update someone else's enrollment (404); completion and overall progress are computed correctly; `my-courses` leaks no hashes.
-- **Q&A:** non-members (an unenrolled student, another instructor) get 403 on read and post; enrolled students can ask and an empty body is rejected; students and other instructors cannot answer (403); the course instructor can answer and students then see the answer.
-- **Instructor analytics (2):** per-course students, average progress and unanswered-question counts; students get 403 and instructors only see their own courses.
-- **Admin (7):** admin role cannot be chosen at registration; non-admins get 403 on every admin route and anonymous users 401; stats; user list with search and pagination (and a limit above 50 is rejected); role changes take effect immediately, invalid roles are rejected and admins cannot change their own role; course unpublish/delete moderation; deleting a user cascades, and admins cannot delete themselves.
-- **Cleanup:** an instructor can delete their own course (this test found a real bug, a 500 caused by missing foreign-key cascades, now fixed).
+**Backend e2e (44):**
+- **Auth:** public health check reports the database; registration never returns a password hash; duplicate email (409) and invalid input (400); wrong vs correct login; 401 without or with a bad token; admin role cannot be chosen at registration.
+- **Roles and ownership:** students cannot create courses; other instructors cannot edit or delete a course or its modules (IDOR); only students can enroll; malformed UUIDs return 400.
+- **Visibility:** drafts hidden from students; lesson content hidden until enrollment and for non-owner instructors; enrolled students keep access after a course is unpublished; admins can open any course with full content; the catalog leaks no password hashes.
+- **Enrollment and progress:** double enrollment returns 409; progress values (150, -1, "abc") are rejected; other students' enrollments return 404; completion and overall progress are computed correctly.
+- **Concurrency:** two simultaneous enrollments give one 201 and one 409; two simultaneous sign-ups with one email give one 201 and one 409 (never a 500).
+- **Input safety:** `javascript:` module URLs are rejected with 400; empty URL fields are accepted and stored as null.
+- **Q&A:** non-members get 403; enrolled students can ask; only the course instructor can answer.
+- **Quizzes (5):** only the owner can create or edit; invalid answer keys and empty quizzes are rejected; students and the unenrolled never see `correctIndex`; submissions are validated (wrong count, out-of-range option, wrong type, wrong role); grading gives 100/50/0 correctly; attempt history is kept; updates replace questions; deletion returns 404 afterwards.
+- **Instructor analytics (2):** students, average progress and unanswered-question counts per course; scoped to the instructor's own courses; 403 for students.
+- **Admin (8):** 403 for non-admins and 401 for anonymous users; stats; user search and pagination (limits above 50 rejected); role changes apply immediately, invalid roles rejected, no self role change; moderation (unpublish, delete); user deletion cascades and self-deletion is blocked.
+- **Cleanup:** deleting a course with enrollments works (an earlier test found a 500 here, fixed with foreign-key cascades).
+
+**Frontend (12):** error-message helper (API messages, validation arrays, plain strings, network failure); API client (token attached, a failed login does not reload the page, an expired session logs out and redirects); Login page shows the server's error message and its labels are linked to the inputs; quiz taker (hidden when no quiz, submit enabled only when everything is answered, result shown, errors shown).
+
+## Issues found and fixed in the final audit
+
+| Issue | Impact | Fix |
+|---|---|---|
+| A wrong password reloaded the login page via the 401 interceptor | The error message was never visible | Interceptor ignores login/register requests |
+| The login error text was always the generic "Login failed" | The server message was lost | Helper handles plain strings, errors, validation arrays |
+| Network failures showed the generic fallback | A sleeping free-tier API looked like "wrong password" | Clear "cannot reach the server, it may be waking up" message |
+| Rate limiting used the proxy's IP | On Render all users would share one login limit | `trust proxy` enabled |
+| Helmet's CSP could break Swagger UI | `/docs` blank in browsers | CSP off for this JSON API |
+| `FRONTEND_URL` with a trailing slash | Every API call blocked by CORS, silently | Origins normalized |
+| `javascript:` URLs allowed in video/PDF links | XSS via iframe or `window.open` | http(s) validation; PDF opens with `noopener` |
+| Simultaneous double-click enroll or sign-up | 500 error | Transaction plus 409 on unique violation |
+| Enrollment was not atomic | Possible half-enrolled student | Single transaction |
+| Unpublishing a course locked enrolled students out (404) | Broken "My courses" links | Enrolled students keep access |
+| Other instructors could click lessons that were empty | Looked broken | Access based on ownership or enrollment |
+| Opening a lesson auto-marked it complete | Misleading progress | Explicit "Mark as complete" button |
+| Admin could not view drafts they moderate | Moderation without visibility | Admins see everything |
+| Module order ties were nondeterministic | Lessons could reorder | Secondary sort on creation time |
+| Password label not linked to the input (Login, Register) | Click-to-focus and screen readers broken | Control now wraps the input |
+| Failed data loads showed an empty page | Looked like "no data" | Visible error banners |
+| Well-known admin password on a public deployment | Anyone could log in as admin | Production seed skips admin unless `SEED_ADMIN_PASSWORD` is set |
+| Short `JWT_SECRET` accepted in production | Weak tokens | App refuses to start below 32 characters |
+| Passwords over 72 bytes silently truncated by bcrypt | Surprising behavior | Max length 72 |
+| `%` and `_` in admin search acted as wildcards | Wrong results | Escaped |
+| `/health` always returned OK | A broken database went unnoticed | Checks the database (503 when down) |
+
+## Production smoke checks (compiled build, production mode)
+
+- Refuses to start with a short `JWT_SECRET`.
+- With `FRONTEND_URL=http://localhost:5173/` (trailing slash) the CORS header is `http://localhost:5173`.
+- `/health` returns `{"status":"ok","database":"up"}`.
+- `/docs` serves Swagger UI with no Content-Security-Policy header.
 
 ## Not tested (be aware)
 
-- **The UI was not exercised in a browser.** The frontend is verified only by lint, type check and build. There are no frontend unit or component tests. Manual check needed: log in as each demo role, create a course, enroll, mark a module complete, ask and answer a question, then log in as admin and use the Admin page (role change, unpublish, delete).
-- **Docker / `docker compose up`:** files written, but Docker is not installed on this machine, so they have never been run.
-- **GitHub Actions workflow:** written but not yet run on GitHub.
-- **Neon and the deployed Render/Vercel setup:** not tested; no connection string was available. Neon needs SSL, which is handled in the config but unverified.
-- **Load, performance and security scanning** (beyond `npm audit`) were not done.
+- **The UI was not exercised in a real browser** (no browser tooling was available). Frontend behavior is covered by the jsdom tests above, lint, type checks and the production build. Manual check: log in as each demo role and walk the flows (create a course, add a quiz, enroll, take the quiz, ask and answer a question, use the Admin page).
+- **Docker / `docker compose up`:** not run (Docker is not installed on the development machine). Verify in a Codespace.
+- **GitHub Actions:** the workflow has not run on GitHub yet.
+- **Neon, Render and Vercel:** not deployed or tested.
+- **Load, performance and penetration testing** were not done.
 
 ## Known remaining risks
 
-- `npm audit` (backend): 27 findings (26 moderate, 1 high), mostly in dev tooling (Jest/ESLint chains). Production dependencies have 3 moderate advisories (glob/minimatch).
-- Anyone can register as an instructor (kept for the demo).
+- Backend `npm audit`: production dependencies have 3 moderate advisories (glob/minimatch, via the Nest toolchain); no critical ones.
+- Frontend `npm audit`: `react-router` 6 has two moderate advisories (open redirect via `<Link>`/`useNavigate` with attacker-controlled targets, and an SSR hydration issue). This app only navigates to hard-coded paths and does not use SSR, so they do not apply; the fix is a breaking upgrade to v7. Dev-only test tooling (Vitest chain) has advisories that never ship to users.
+- Anyone can register as an instructor (a deliberate demo shortcut).
 - The JWT lives in localStorage.

@@ -128,15 +128,16 @@ const Register = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
+                    <div className="relative">
+                        <FormControl>
+                          <Input
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Strong password"
                           autoComplete="new-password"
                           className="pr-10"
                           {...field}
                         />
+                        </FormControl>
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
@@ -150,7 +151,6 @@ const Register = () => {
                           )}
                         </button>
                       </div>
-                    </FormControl>
                     <div className="space-y-3">
                       <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800">
                         <div

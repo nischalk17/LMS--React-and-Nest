@@ -376,6 +376,242 @@ describe('LMS API (e2e)', () => {
     });
   });
 
+  describe('hardening and edge cases', () => {
+    it('health check reports the database', async () => {
+      const res = await request(app.getHttpServer()).get('/health').expect(200);
+      expect(res.body).toEqual({ status: 'ok', database: 'up' });
+    });
+
+    it('rejects non-http(s) module URLs (javascript: XSS) but accepts empty ones', async () => {
+      const server = app.getHttpServer();
+      for (const field of ['videoUrl', 'pdfUrl']) {
+        await request(server)
+          .post(`/courses/${courseId}/modules`)
+          .set(auth(instructorToken))
+          .send({ title: 'bad', type: 'video', [field]: 'javascript:alert(1)' })
+          .expect(400);
+      }
+      const ok = await request(server)
+        .post(`/courses/${courseId}/modules`)
+        .set(auth(instructorToken))
+        .send({
+          title: 'ok',
+          type: 'video',
+          videoUrl: 'https://www.youtube.com/watch?v=abc',
+          pdfUrl: '',
+        })
+        .expect(201);
+      expect(ok.body.pdfUrl).toBeNull();
+      await request(server)
+        .delete(`/courses/modules/${ok.body.id as string}`)
+        .set(auth(instructorToken))
+        .expect(200);
+    });
+
+    it('only students can enroll', async () => {
+      await request(app.getHttpServer())
+        .post(`/enrollments/courses/${courseId}`)
+        .set(auth(otherInstructorToken))
+        .expect(403);
+    });
+
+    it('two simultaneous enrollments produce one 201 and one 409, never a 500', async () => {
+      const server = app.getHttpServer();
+      const course = await request(server)
+        .post('/courses')
+        .set(auth(instructorToken))
+        .send({ title: 'Race', description: 'race', isPublished: true })
+        .expect(201);
+      const url = `/enrollments/courses/${course.body.id as string}`;
+      const results = await Promise.all([
+        request(server).post(url).set(auth(otherStudentToken)),
+        request(server).post(url).set(auth(otherStudentToken)),
+      ]);
+      expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    });
+
+    it('two simultaneous sign-ups with one email give 201 + 409, never a 500', async () => {
+      const results = await Promise.all([
+        register('dup@test.dev', 'student'),
+        register('dup@test.dev', 'student'),
+      ]);
+      expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    });
+
+    it('lets an enrolled student keep access after the course is unpublished', async () => {
+      const server = app.getHttpServer();
+      await request(server)
+        .patch(`/courses/${courseId}`)
+        .set(auth(instructorToken))
+        .send({ isPublished: false })
+        .expect(200);
+
+      const enrolled = await request(server)
+        .get(`/courses/${courseId}`)
+        .set(auth(studentToken))
+        .expect(200);
+      expect(enrolled.body.modules[0].content).toBe('secret lesson text');
+      await request(server)
+        .get(`/courses/${courseId}`)
+        .set(auth(otherStudentToken))
+        .expect(404);
+
+      await request(server)
+        .patch(`/courses/${courseId}`)
+        .set(auth(instructorToken))
+        .send({ isPublished: true })
+        .expect(200);
+    });
+
+    it("hides lesson content from other instructors (they don't own the course)", async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/courses/${courseId}`)
+        .set(auth(otherInstructorToken))
+        .expect(200);
+      expect(res.body.modules[0].content).toBeNull();
+    });
+  });
+
+  describe('quizzes', () => {
+    const quiz = {
+      title: 'Module check',
+      passingScore: 50,
+      questions: [
+        { text: 'What is 2 + 2?', options: ['3', '4', '5'], correctIndex: 1 },
+        {
+          text: 'Capital of France?',
+          options: ['Paris', 'Rome'],
+          correctIndex: 0,
+        },
+      ],
+    };
+    const url = () => `/courses/${courseId}/quiz`;
+
+    it('only the course owner can create a quiz, with a valid answer key', async () => {
+      const server = app.getHttpServer();
+      await request(server)
+        .put(url())
+        .set(auth(studentToken))
+        .send(quiz)
+        .expect(403);
+      await request(server)
+        .put(url())
+        .set(auth(otherInstructorToken))
+        .send(quiz)
+        .expect(403);
+      await request(server)
+        .put(url())
+        .set(auth(instructorToken))
+        .send({
+          ...quiz,
+          questions: [{ text: 'q', options: ['a', 'b'], correctIndex: 5 }],
+        })
+        .expect(400);
+      await request(server)
+        .put(url())
+        .set(auth(instructorToken))
+        .send({ ...quiz, questions: [] })
+        .expect(400);
+
+      const res = await request(server)
+        .put(url())
+        .set(auth(instructorToken))
+        .send(quiz)
+        .expect(200);
+      expect(res.body.questions).toHaveLength(2);
+      expect(res.body.questions[0].correctIndex).toBe(1); // owner sees the key
+    });
+
+    it('hides the answer key from students and blocks the unenrolled', async () => {
+      const server = app.getHttpServer();
+      await request(server).get(url()).set(auth(otherStudentToken)).expect(403);
+      const res = await request(server)
+        .get(url())
+        .set(auth(studentToken))
+        .expect(200);
+      expect(res.body.title).toBe('Module check');
+      expect(JSON.stringify(res.body)).not.toContain('correctIndex');
+    });
+
+    it('validates submissions', async () => {
+      const server = app.getHttpServer();
+      const post = (token: string, answers: unknown) =>
+        request(server)
+          .post(`${url()}/attempts`)
+          .set(auth(token))
+          .send({ answers });
+      await post(otherStudentToken, [1, 0]).expect(403);
+      await post(studentToken, [1]).expect(400); // not all answered
+      await post(studentToken, [1, 9]).expect(400); // option out of range
+      await post(studentToken, [1, -1]).expect(400);
+      await post(studentToken, 'nope').expect(400);
+      await post(instructorToken, [1, 0]).expect(403); // owners do not take it
+    });
+
+    it('grades attempts and keeps history', async () => {
+      const server = app.getHttpServer();
+      const perfect = await request(server)
+        .post(`${url()}/attempts`)
+        .set(auth(studentToken))
+        .send({ answers: [1, 0] })
+        .expect(201);
+      expect(perfect.body).toMatchObject({
+        score: 100,
+        passed: true,
+        correct: 2,
+        total: 2,
+        results: [true, true],
+      });
+
+      const half = await request(server)
+        .post(`${url()}/attempts`)
+        .set(auth(studentToken))
+        .send({ answers: [1, 1] })
+        .expect(201);
+      expect(half.body).toMatchObject({ score: 50, passed: true });
+
+      const zero = await request(server)
+        .post(`${url()}/attempts`)
+        .set(auth(studentToken))
+        .send({ answers: [0, 1] })
+        .expect(201);
+      expect(zero.body).toMatchObject({ score: 0, passed: false });
+      expect(JSON.stringify(zero.body)).not.toContain('correctIndex');
+
+      const mine = await request(server)
+        .get(`${url()}/attempts/mine`)
+        .set(auth(studentToken))
+        .expect(200);
+      expect(mine.body).toHaveLength(3);
+    });
+
+    it('replaces questions on update and 404s after deletion', async () => {
+      const server = app.getHttpServer();
+      const updated = await request(server)
+        .put(url())
+        .set(auth(instructorToken))
+        .send({
+          title: 'Short quiz',
+          passingScore: 100,
+          questions: [
+            { text: 'Only one', options: ['x', 'y'], correctIndex: 1 },
+          ],
+        })
+        .expect(200);
+      expect(updated.body.questions).toHaveLength(1);
+
+      await request(server)
+        .delete(url())
+        .set(auth(otherInstructorToken))
+        .expect(403);
+      await request(server)
+        .delete(url())
+        .set(auth(instructorToken))
+        .expect(200);
+      await request(server).get(url()).set(auth(studentToken)).expect(404);
+    });
+  });
+
   describe('admin', () => {
     let adminToken: string;
     let adminId: string;
@@ -417,8 +653,8 @@ describe('LMS API (e2e)', () => {
         .expect(200);
       expect(stats.body.users.admins).toBe(1);
       expect(stats.body.users.instructors).toBe(2);
-      expect(stats.body.courses.published).toBe(1);
-      expect(stats.body.enrollments).toBe(1);
+      expect(stats.body.courses.published).toBe(2); // main course + the "Race" course
+      expect(stats.body.enrollments).toBe(2);
     });
 
     it('lists and searches users, paginated, without password hashes', async () => {
@@ -474,6 +710,29 @@ describe('LMS API (e2e)', () => {
         .set(auth(adminToken))
         .send({ role: 'student' })
         .expect(400);
+    });
+
+    it('lets an admin open any course, including drafts, with full content', async () => {
+      const server = app.getHttpServer();
+      const draft = await request(server)
+        .post('/courses')
+        .set(auth(instructorToken))
+        .send({ title: 'Hidden draft', description: 'wip', isPublished: false })
+        .expect(201);
+      await request(server)
+        .post(`/courses/${draft.body.id as string}/modules`)
+        .set(auth(instructorToken))
+        .send({ title: 'm', type: 'text', content: 'draft body' })
+        .expect(201);
+      const res = await request(server)
+        .get(`/courses/${draft.body.id as string}`)
+        .set(auth(adminToken))
+        .expect(200);
+      expect(res.body.modules[0].content).toBe('draft body');
+      await request(server)
+        .delete(`/admin/courses/${draft.body.id as string}`)
+        .set(auth(adminToken))
+        .expect(200);
     });
 
     it('moderates courses: unpublish hides, delete removes', async () => {

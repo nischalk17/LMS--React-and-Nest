@@ -8,14 +8,16 @@ import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ProgressModule } from './progress/progress.module';
 import { QuestionsModule } from './questions/questions.module';
+import { QuizzesModule } from './quizzes/quizzes.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health.controller';
+import { validateEnv } from './config/validate-env';
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -27,6 +29,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ProgressModule,
     QuestionsModule,
     AdminModule,
+    QuizzesModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -41,39 +41,50 @@ export class CoursesService {
     return this.courseRepository.find({
       where,
       relations: ['instructor', 'modules'],
-      order: { createdAt: 'DESC', modules: { order: 'ASC' } },
+      order: {
+        createdAt: 'DESC',
+        modules: { order: 'ASC', createdAt: 'ASC' },
+      },
     });
   }
 
   /**
-   * Drafts are visible to their owner only. Module content is hidden unless the
-   * caller owns the course or is enrolled in it.
+   * Who sees what:
+   *  - owner and admins: everything, including drafts and lesson content
+   *  - enrolled students: the course and its content, even if later unpublished
+   *  - everyone else: published courses only, with lesson content hidden
    */
   async findOne(id: string, user: AuthUser) {
     const course = await this.courseRepository.findOne({
       where: { id },
       relations: ['instructor', 'modules'],
-      order: { modules: { order: 'ASC' } },
+      order: { modules: { order: 'ASC', createdAt: 'ASC' } },
     });
-    const isOwner = course?.instructorId === user.id;
-    if (!course || (!course.isPublished && !isOwner)) {
+    if (!course) {
       throw new NotFoundException('Course not found');
     }
-    if (!isOwner) {
-      const enrolled = await this.enrollmentRepository.exists({
+
+    const privileged =
+      course.instructorId === user.id || user.role === UserRole.ADMIN;
+    const enrolled =
+      !privileged &&
+      (await this.enrollmentRepository.exists({
         where: { studentId: user.id, courseId: id },
-      });
-      if (!enrolled) {
-        course.modules = course.modules.map(
-          (m) =>
-            ({
-              ...m,
-              content: null,
-              videoUrl: null,
-              pdfUrl: null,
-            }) as unknown as Module,
-        );
-      }
+      }));
+
+    if (!privileged && !enrolled && !course.isPublished) {
+      throw new NotFoundException('Course not found');
+    }
+    if (!privileged && !enrolled) {
+      course.modules = course.modules.map(
+        (m) =>
+          ({
+            ...m,
+            content: null,
+            videoUrl: null,
+            pdfUrl: null,
+          }) as unknown as Module,
+      );
     }
     return course;
   }

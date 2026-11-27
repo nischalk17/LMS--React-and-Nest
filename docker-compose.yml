@@ -23,6 +23,7 @@ services:
       NODE_ENV: production
       FRONTEND_URL: http://localhost:5173
       JWT_SECRET: docker-demo-secret-change-me-for-real-use
+      SEED_ADMIN_PASSWORD: Password123!
       DB_HOST: db
       DB_PORT: 5432
       DB_USERNAME: postgres

@@ -10,6 +10,7 @@ import { Course } from '../entities/course.entity';
 import { Enrollment } from '../entities/enrollment.entity';
 import { Question } from '../entities/question.entity';
 import { ListQueryDto } from './dto/admin.dto';
+import { escapeLike } from '../common/db-errors';
 
 @Injectable()
 export class AdminService {
@@ -41,7 +42,7 @@ export class AdminService {
   }
 
   async listUsers({ search, page, limit }: ListQueryDto) {
-    const term = search ? `%${search}%` : undefined;
+    const term = search ? `%${escapeLike(search)}%` : undefined;
     const where = term
       ? [
           { email: ILike(term) },
@@ -77,7 +78,7 @@ export class AdminService {
 
   async listCourses({ search, page, limit }: ListQueryDto) {
     const [items, total] = await this.courses.findAndCount({
-      where: search ? { title: ILike(`%${search}%`) } : {},
+      where: search ? { title: ILike(`%${escapeLike(search)}%`) } : {},
       relations: ['instructor'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,

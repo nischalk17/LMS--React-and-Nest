@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from '../entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { isUniqueViolation } from '../common/db-errors';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +50,15 @@ export class AuthService {
       password: await bcrypt.hash(registerDto.password, 10),
       role: registerDto.role ?? UserRole.STUDENT,
     });
-    return this.toAuthResponse(await this.userRepository.save(user));
+    try {
+      return this.toAuthResponse(await this.userRepository.save(user));
+    } catch (err) {
+      // two simultaneous sign-ups with the same email: the DB constraint wins
+      if (isUniqueViolation(err)) {
+        throw new ConflictException('Email already exists');
+      }
+      throw err;
+    }
   }
 
   async login(loginDto: LoginDto) {
