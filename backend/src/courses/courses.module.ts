@@ -9,6 +9,7 @@ import { Module as ModuleEntity } from '../entities/module.entity';
 import { Enrollment } from '../entities/enrollment.entity';
 import { Progress } from '../entities/progress.entity';
 import { Question } from '../entities/question.entity';
+import { QuizResponse } from '../entities/quiz.entity';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Question } from '../entities/question.entity';
       Enrollment,
       Progress,
       Question,
+      QuizResponse,
     ]),
   ],
   controllers: [CoursesController, AnalyticsController],

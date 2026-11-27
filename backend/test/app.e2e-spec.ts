@@ -4,6 +4,7 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { setupApp } from '../src/setup-app';
+import { MasteryService } from '../src/mastery/mastery.service';
 
 describe('LMS API (e2e)', () => {
   let app: INestApplication;
@@ -694,6 +695,107 @@ describe('LMS API (e2e)', () => {
           questions: [{ ...quiz.questions[0], id: 'not-a-uuid' }],
         })
         .expect(400);
+    });
+
+    it('reports per-skill mastery, weakest first, as an estimate when no model is shipped', async () => {
+      const server = app.getHttpServer();
+      const res = await request(server)
+        .get(`/courses/${courseId}/mastery/me`)
+        .set(auth(studentToken))
+        .expect(200);
+      expect(res.body.method).toBe('estimate');
+      expect(res.body.model).toBeNull();
+      expect(res.body.totalAnswers).toBe(6);
+      // Arithmetic: right, right, wrong -> (2+1)/(3+2); NestJS 101: right, wrong, wrong -> (1+1)/(3+2)
+      expect(
+        res.body.skills.map((k: { skill: string; mastery: number }) => [
+          k.skill,
+          k.mastery,
+        ]),
+      ).toEqual([
+        ['NestJS 101', 0.4],
+        ['Arithmetic', 0.6],
+      ]);
+      expect(res.body.skills[0]).toMatchObject({
+        attempts: 3,
+        correct: 1,
+        method: 'estimate',
+        confidence: 'medium',
+      });
+    });
+
+    it('switches to the trained model when one is shipped', async () => {
+      const service = app.get(MasteryService);
+      const original = service.model;
+      service.model = {
+        version: 1,
+        features: [],
+        mean: [0, 0, 0, 0, 0, 0, 0],
+        scale: [1, 1, 1, 1, 1, 1, 1],
+        coef: [0, 0, 0, 0, 0, 0, 0],
+        intercept: 0,
+        prior: 0.5,
+        priorWeight: 2,
+        recentWindow: 3,
+        trainedOn: { dataset: 'test-fixture', rows: 1, students: 1 },
+        heldOut: { auc: 0.71, accuracy: 0.66 },
+      };
+      try {
+        const res = await request(app.getHttpServer())
+          .get(`/courses/${courseId}/mastery/me`)
+          .set(auth(studentToken))
+          .expect(200);
+        expect(res.body.method).toBe('model');
+        expect(res.body.model).toEqual({
+          dataset: 'test-fixture',
+          heldOutAuc: 0.71,
+        });
+        expect(
+          res.body.skills.every((k: { mastery: number }) => k.mastery === 0.5),
+        ).toBe(true);
+      } finally {
+        service.model = original;
+      }
+    });
+
+    it('keeps mastery private to enrolled students', async () => {
+      const server = app.getHttpServer();
+      const path = `/courses/${courseId}/mastery/me`;
+      await request(server).get(path).expect(401);
+      await request(server).get(path).set(auth(otherStudentToken)).expect(403); // not enrolled
+      await request(server).get(path).set(auth(instructorToken)).expect(403); // students only
+      await request(server)
+        .get(`/courses/00000000-0000-4000-8000-000000000000/mastery/me`)
+        .set(auth(studentToken))
+        .expect(404);
+    });
+
+    it('gives instructors the weakest skills of the class once there are enough answers', async () => {
+      const server = app.getHttpServer();
+      const before = await request(server)
+        .get('/instructor/analytics')
+        .set(auth(instructorToken))
+        .expect(200);
+      const mine = (body: { courseId: string; weakestSkills: unknown[] }[]) =>
+        body.find((c) => c.courseId === courseId)!;
+      expect(mine(before.body).weakestSkills).toEqual([]); // 3 answers per skill is too few
+
+      for (let i = 0; i < 2; i++) {
+        await request(server)
+          .post(`${url()}/attempts`)
+          .set(auth(studentToken))
+          .send({ answers: [1, 1] }) // first right, second wrong
+          .expect(201);
+      }
+      const res = await request(server)
+        .get('/instructor/analytics')
+        .set(auth(instructorToken))
+        .expect(200);
+      // Arithmetic: 4 of 5 right; NestJS 101: 1 of 5 right
+      expect(mine(res.body).weakestSkills).toEqual([
+        { skill: 'NestJS 101', accuracy: 0.2, answers: 5 },
+        { skill: 'Arithmetic', accuracy: 0.8, answers: 5 },
+      ]);
     });
 
     it('replaces questions on update and 404s after deletion', async () => {

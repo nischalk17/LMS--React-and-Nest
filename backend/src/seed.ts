@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 import dataSource from './data-source';
+import { seedDemoActivity } from './seed-demo-activity';
 import { User, UserRole } from './entities/user.entity';
 import { Course } from './entities/course.entity';
 import { Module, ModuleType } from './entities/module.entity';
@@ -243,6 +244,9 @@ async function main() {
     );
     console.log(`Seeded quiz: ${demo.title}`);
   }
+
+  // simulated learners and quiz history so mastery and analytics are not empty
+  await seedDemoActivity(dataSource);
 
   console.log(`Done. Demo logins (password "${DEMO_PASSWORD}"):`);
   console.log('  instructor@lms.dev  (instructor)');

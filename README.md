@@ -10,6 +10,7 @@ A full-stack learning platform where instructors publish courses made of text, v
 - **Instructor analytics:** per course, enrolled students, average progress and unanswered questions.
 - **Admin:** a dashboard with platform stats, a searchable and paginated user list (change roles, delete users) and course moderation (unpublish, delete). Admins cannot change or delete themselves.
 - **Quizzes:** instructors build one multiple-choice quiz per course (passing score, 2-6 options per question); enrolled students take it, get an instant score and per-question feedback, and keep an attempt history. The answer key never reaches students. Each question has a skill tag, and every answer is logged per question (the data behind the planned mastery tracking). Editing a quiz keeps existing question ids, so a student's answer history survives edits.
+- **Mastery tracking:** students see predicted mastery per skill (weakest first, with early-estimate warnings); instructors see their class's weakest skills per course. Until a model trained on real data is shipped, the numbers are smoothed-accuracy **estimates** and are labeled that way. See [ml/README.md](ml/README.md) for the model, evaluation method and current status.
 - **Course Q&A:** enrolled students ask questions on a course; only that course's instructor can answer. Non-members get a 403.
 - **Access rules:** drafts are visible only to their owner and admins; lesson content stays hidden until the student enrolls (students keep access if a course is later unpublished).
 - **Hardening:** password hashes never leave the API, module links must be http(s) (blocks `javascript:` URLs), validated UUID params, rate limiting that works behind a proxy, Helmet, atomic enrollment with proper 409s on double-clicks, and a required 32+ character `JWT_SECRET` in production.
@@ -23,7 +24,8 @@ A full-stack learning platform where instructors publish courses made of text, v
 | Frontend | React 18, TypeScript, Vite, Redux Toolkit, React Router, Tailwind CSS, React Hook Form + zod, Axios |
 | Backend | NestJS 11, TypeORM, Passport JWT, class-validator, Swagger, Helmet, Throttler |
 | Database | PostgreSQL 16 (migrations + seed script) |
-| Tooling | Jest (unit + e2e with supertest), ESLint, Prettier, Docker Compose, GitHub Actions |
+| ML | Python (pandas, scikit-learn) for training and evaluation; the exported model is evaluated in TypeScript inside the API, so there is no extra service to host |
+| Tooling | Jest (unit + e2e with supertest), Vitest, pytest, ESLint, Prettier, ruff, Docker Compose, GitHub Actions |
 
 ## Architecture
 
@@ -165,6 +167,7 @@ npm run lint && npm run typecheck
 npm test                    # unit tests (auth, progress, env validation)
 npm run test:e2e            # API flows against a real Postgres (TEST_DB_* env vars, default lms_test on localhost:5432)
 cd ../frontend && npm run lint && npm test && npm run build   # UI tests: Vitest + Testing Library
+cd ../ml && ruff check . && pytest                            # feature and pipeline tests
 ```
 
 The e2e suite covers registration/login, role checks, ownership (IDOR) checks, draft visibility, enrollment, content gating, progress tracking, quizzes (grading, answer-key secrecy), Q&A permissions, instructor analytics, admin moderation, and concurrency edge cases (double enroll, double sign-up). CI runs all of the above on every push.
