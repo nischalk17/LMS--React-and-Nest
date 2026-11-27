@@ -51,15 +51,56 @@ erDiagram
   QUIZ ||--o{ QUIZ_ATTEMPT : "graded attempts"
   USER ||--o{ QUIZ_ATTEMPT : takes
   MODULE ||--o{ PROGRESS : "progress on"
-  USER { uuid id PK; string email UK; string password; enum role "student, instructor, admin" }
-  COURSE { uuid id PK; string title; text description; bool isPublished }
-  MODULE { uuid id PK; string title; enum type; int order }
-  ENROLLMENT { uuid id PK; uuid studentId; uuid courseId }
-  QUESTION { uuid id PK; text body; text answer; timestamp answeredAt }
-  QUIZ { uuid id PK; string title; int passingScore }
-  QUIZ_QUESTION { uuid id PK; text text; jsonb options; int correctIndex }
-  QUIZ_ATTEMPT { uuid id PK; int score; bool passed }
-  PROGRESS { uuid id PK; bool isCompleted; float completionPercentage }
+  USER {
+    uuid id PK
+    string email UK
+    string password
+    enum role "student, instructor, admin"
+  }
+  COURSE {
+    uuid id PK
+    string title
+    text description
+    bool isPublished
+  }
+  MODULE {
+    uuid id PK
+    string title
+    enum type
+    int order
+  }
+  ENROLLMENT {
+    uuid id PK
+    uuid studentId
+    uuid courseId
+  }
+  QUESTION {
+    uuid id PK
+    text body
+    text answer
+    timestamp answeredAt
+  }
+  QUIZ {
+    uuid id PK
+    string title
+    int passingScore
+  }
+  QUIZ_QUESTION {
+    uuid id PK
+    text text
+    jsonb options
+    int correctIndex
+  }
+  QUIZ_ATTEMPT {
+    uuid id PK
+    int score
+    bool passed
+  }
+  PROGRESS {
+    uuid id PK
+    bool isCompleted
+    float completionPercentage
+  }
 ```
 
 `ENROLLMENT (studentId, courseId)` and `PROGRESS (enrollmentId, moduleId)` are unique pairs.
