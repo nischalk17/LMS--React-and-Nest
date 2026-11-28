@@ -46,7 +46,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         Loading dashboard...
       </div>
     );
@@ -55,7 +55,7 @@ const Dashboard = () => {
   if (user?.role === 'instructor') {
     return (
       <div className="space-y-4">
-        <Card className="shadow-brand">
+        <Card className="">
           <CardHeader>
             <CardTitle className="text-2xl">Welcome, {user.firstName}!</CardTitle>
             <CardDescription>
@@ -77,8 +77,8 @@ const Dashboard = () => {
       {loadError && <ErrorMessage message={loadError} />}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Welcome, {user?.firstName}!</h1>
-          <p className="text-sm text-slate-600">Your active enrollments and progress.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Welcome, {user?.firstName}!</h1>
+          <p className="text-sm text-muted-foreground">Your active enrollments and progress.</p>
         </div>
         <Button variant="outline" asChild>
           <Link to="/courses">Browse Courses</Link>
@@ -108,15 +108,15 @@ const Dashboard = () => {
                   <CardDescription>{enrollment.course.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full rounded-full bg-primary transition-all"
+                      className="h-full rounded-full bg-brand transition-all"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">
-                      Progress: <span className="font-semibold text-slate-900">{progress}%</span>
+                    <span className="text-sm text-muted-foreground">
+                      Progress: <span className="font-semibold text-foreground">{progress}%</span>
                     </span>
                     <Badge variant={progress === 100 ? 'success' : 'secondary'}>
                       {progress === 100 ? 'Completed' : 'In progress'}

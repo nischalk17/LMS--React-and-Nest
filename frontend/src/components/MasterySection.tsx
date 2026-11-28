@@ -13,10 +13,10 @@ import {
 
 const band = (m: number) =>
   m >= 0.75
-    ? { label: "Strong", bar: "bg-emerald-500" }
+    ? { label: "Strong", bar: "bg-success" }
     : m >= 0.5
-      ? { label: "Developing", bar: "bg-amber-500" }
-      : { label: "Needs practice", bar: "bg-red-500" };
+      ? { label: "Developing", bar: "bg-warning" }
+      : { label: "Needs practice", bar: "bg-destructive" };
 
 /**
  * Student view: predicted mastery per skill from quiz history, weakest first.
@@ -67,10 +67,10 @@ const MasterySection = ({
           return (
             <div key={s.skill} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-900 dark:text-slate-100">
+                <span className="font-medium text-foreground">
                   {s.skill}
                 </span>
-                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                <span className="flex items-center gap-2 text-muted-foreground">
                   {s.confidence === "low" && (
                     <Badge variant="secondary">Early estimate</Badge>
                   )}
@@ -78,7 +78,7 @@ const MasterySection = ({
                 </span>
               </div>
               <div
-                className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+                className="h-2 w-full overflow-hidden rounded-full bg-muted"
                 role="progressbar"
                 aria-label={`${s.skill} mastery`}
                 aria-valuenow={pct}
@@ -90,7 +90,7 @@ const MasterySection = ({
                   style={{ width: `${pct}%` }}
                 />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {s.correct} of {s.attempts} answers correct
               </p>
             </div>

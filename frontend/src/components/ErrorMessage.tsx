@@ -1,7 +1,7 @@
 const ErrorMessage = ({ message }: { message: string }) => (
   <div
     role="alert"
-    className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
+    className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
   >
     {message}
   </div>

@@ -2,41 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design tokens: forest green (structure), cream (page), coral (the main action).
+ * Values are space-separated RGB channels so Tailwind can add opacity
+ * (bg-primary/10). Every text pair is checked against WCAG AA (4.5:1) in
+ * src/theme/contrast.test.ts, in both themes. If you change a colour, change the
+ * channels and the hex comment together, then run the tests.
+ */
 :root {
   color-scheme: light;
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --background: 247 241 227;  /* #F7F1E3 */
+  --foreground: 27 43 36;  /* #1B2B24 */
+  --card: 255 251 240;  /* #FFFBF0 */
+  --muted: 239 232 214;  /* #EFE8D6 */
+  --muted-foreground: 85 101 92;  /* #55655C */
+  --border: 221 211 187;  /* #DDD3BB */
+  --ring: 31 77 58;  /* #1F4D3A */
+  --brand: 31 77 58;  /* #1F4D3A */
+  --brand-foreground: 255 251 240;  /* #FFFBF0 */
+  --primary: 242 107 91;  /* #F26B5B */
+  --primary-foreground: 27 43 36;  /* #1B2B24 */
+  --secondary: 231 235 221;  /* #E7EBDD */
+  --secondary-foreground: 31 77 58;  /* #1F4D3A */
+  --success: 29 107 69;  /* #1D6B45 */
+  --warning: 138 90 0;  /* #8A5A00 */
+  --destructive: 168 50 42;  /* #A8322A */
+  --destructive-foreground: 255 251 240;  /* #FFFBF0 */
+  --nav: 31 77 58;  /* #1F4D3A */
+  --nav-foreground: 255 251 240;  /* #FFFBF0 */
 }
 
 .dark {
   color-scheme: dark;
-  --background: 222.2 47.4% 11.2%;
-  --foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 221.2 83.2% 53.3%;
+  --background: 15 26 21;  /* #0F1A15 */
+  --foreground: 241 236 221;  /* #F1ECDD */
+  --card: 22 36 30;  /* #16241E */
+  --muted: 27 42 35;  /* #1B2A23 */
+  --muted-foreground: 163 179 169;  /* #A3B3A9 */
+  --border: 42 58 50;  /* #2A3A32 */
+  --ring: 140 203 169;  /* #8CCBA9 */
+  --brand: 140 203 169;  /* #8CCBA9 */
+  --brand-foreground: 15 26 21;  /* #0F1A15 */
+  --primary: 244 126 112;  /* #F47E70 */
+  --primary-foreground: 15 26 21;  /* #0F1A15 */
+  --secondary: 31 51 41;  /* #1F3329 */
+  --secondary-foreground: 207 230 218;  /* #CFE6DA */
+  --success: 111 207 159;  /* #6FCF9F */
+  --warning: 230 180 80;  /* #E6B450 */
+  --destructive: 240 137 126;  /* #F0897E */
+  --destructive-foreground: 15 26 21;  /* #0F1A15 */
+  --nav: 23 50 41;  /* #173229 */
+  --nav-foreground: 241 236 221;  /* #F1ECDD */
 }
 
-* {
-  @apply border-border;
-}
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-body {
-  @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900 antialiased transition-colors duration-300 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100;
-}
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 
-#root {
-  @apply min-h-screen;
-}
+  body {
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+  }
 
-.glass-panel {
-  @apply bg-white/80 backdrop-blur-lg border border-white/50 shadow-xl dark:bg-slate-900/70 dark:border-slate-800;
-}
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading tracking-tight;
+    text-wrap: balance;
+  }
 
+  #root {
+    @apply min-h-screen;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

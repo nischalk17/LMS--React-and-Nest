@@ -50,7 +50,7 @@ const CreateCourse = () => {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <Card className="shadow-brand">
+      <Card className="">
         <CardHeader>
           <CardTitle className="text-2xl">Create New Course</CardTitle>
           <CardDescription>
@@ -105,10 +105,10 @@ const CreateCourse = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          className="h-4 w-4 rounded border-input text-brand focus:ring-ring"
                           checked={field.value}
                           onChange={(e) => field.onChange(e.target.checked)}
                         />

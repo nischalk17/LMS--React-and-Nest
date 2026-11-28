@@ -84,16 +84,16 @@ const CourseCatalog = () => {
       {loadError && <ErrorMessage message={loadError} />}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Course Catalog</h1>
-          <p className="text-sm text-slate-600">
+          <h1 className="text-2xl font-semibold text-foreground">Course Catalog</h1>
+          <p className="text-sm text-muted-foreground">
             Browse published courses and enroll to start learning.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
+      <div className="grid gap-4 rounded-lg border border-border bg-card p-4 shadow-sm md:grid-cols-3">
         <div className="md:col-span-2">
-          <label className="text-sm font-medium text-slate-700">Search</label>
+          <label className="text-sm font-medium text-foreground">Search</label>
           <Input
             type="text"
             placeholder="Search courses..."
@@ -103,7 +103,7 @@ const CourseCatalog = () => {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Instructor</label>
+          <label className="text-sm font-medium text-foreground">Instructor</label>
           <Select
             value={selectedInstructor}
             onChange={(e) => setSelectedInstructor(e.target.value)}
@@ -120,12 +120,12 @@ const CourseCatalog = () => {
       </div>
 
       {loading ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-slate-600 shadow-sm">
+        <div className="rounded-lg border border-border bg-card p-8 text-center text-muted-foreground shadow-sm">
           Loading courses...
         </div>
       ) : filteredCourses.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
-          <p className="text-slate-600">
+        <div className="rounded-lg border border-dashed border-input bg-card p-8 text-center shadow-sm">
+          <p className="text-muted-foreground">
             {searchQuery || selectedInstructor !== 'all'
               ? 'No courses match your filters.'
               : 'No courses available at the moment.'}
@@ -150,19 +150,19 @@ const CourseCatalog = () => {
                       {course.modules?.length || 0} modules
                     </Badge>
                   </div>
-                  <CardDescription className="text-sm text-slate-600">
+                  <CardDescription className="text-sm text-muted-foreground">
                     {course.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col justify-between gap-4">
-                  <div className="text-sm text-slate-700">
+                  <div className="text-sm text-foreground">
                     Instructor:{' '}
-                    <span className="font-semibold text-slate-900">
+                    <span className="font-semibold text-foreground">
                       {course.instructor.firstName} {course.instructor.lastName}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase tracking-wide text-slate-500">
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">
                       Updated {new Date(course.updatedAt).toLocaleDateString()}
                     </span>
                     <Button variant="outline" size="sm" asChild>
@@ -183,7 +183,7 @@ const CourseCatalog = () => {
               >
                 Previous
               </Button>
-              <span className="text-sm text-slate-700">
+              <span className="text-sm text-foreground">
                 Page {currentPage} of {totalPages}
               </span>
               <Button

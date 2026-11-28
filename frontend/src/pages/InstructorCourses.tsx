@@ -52,7 +52,7 @@ const InstructorCourses = () => {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         Loading courses...
       </div>
     );
@@ -63,8 +63,8 @@ const InstructorCourses = () => {
       {loadError && <ErrorMessage message={loadError} />}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">My Courses</h1>
-          <p className="text-sm text-slate-600">Manage drafts and published courses.</p>
+          <h1 className="text-2xl font-semibold text-foreground">My Courses</h1>
+          <p className="text-sm text-muted-foreground">Manage drafts and published courses.</p>
         </div>
         <Button asChild>
           <Link to="/instructor/courses/create">Create New Course</Link>
@@ -97,7 +97,7 @@ const InstructorCourses = () => {
                 <CardDescription>{course.description}</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center justify-between">
-                <div className="space-y-1 text-sm text-slate-600">
+                <div className="space-y-1 text-sm text-muted-foreground">
                   <div>{course.modules?.length || 0} modules</div>
                   <div>
                     {stats[course.id]?.students ?? 0} students ·{' '}
@@ -112,7 +112,7 @@ const InstructorCourses = () => {
                     </div>
                   )}
                   {(stats[course.id]?.unansweredQuestions ?? 0) > 0 && (
-                    <div className="font-medium text-amber-600">
+                    <div className="font-medium text-warning">
                       {stats[course.id].unansweredQuestions} unanswered question(s)
                     </div>
                   )}

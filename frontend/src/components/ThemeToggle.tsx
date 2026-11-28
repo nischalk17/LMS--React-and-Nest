@@ -2,7 +2,7 @@ import { MoonStar, Sun } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 
-const ThemeToggle = () => {
+const ThemeToggle = ({ onDark = false }: { onDark?: boolean }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -11,11 +11,15 @@ const ThemeToggle = () => {
       type="button"
       variant="ghost"
       size="icon"
-      className="rounded-full border border-slate-200 bg-white/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/70 dark:hover:bg-slate-800"
+      className={
+        onDark
+          ? 'rounded-full border border-nav-foreground/30 text-nav-foreground hover:bg-nav-foreground/10'
+          : 'rounded-full border border-border bg-card hover:bg-muted'
+      }
       onClick={toggleTheme}
-      aria-label="Toggle theme"
+      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
     >
-      {isDark ? <Sun className="h-5 w-5 text-amber-300" /> : <MoonStar className="h-5 w-5 text-slate-800" />}
+      {isDark ? <Sun className="h-5 w-5" aria-hidden="true" /> : <MoonStar className="h-5 w-5" aria-hidden="true" />}
     </Button>
   );
 };
