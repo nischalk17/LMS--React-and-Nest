@@ -178,6 +178,19 @@ The e2e suite covers registration/login, role checks, ownership (IDOR) checks, d
 - **API:** Render web service, root `backend`, build `npm ci && npm run build`, start `node dist/seed.js && node dist/main`. Env: `DATABASE_URL`, `JWT_SECRET` (32+ characters), `FRONTEND_URL` (your Vercel URL), `NODE_ENV=production`, and optionally `SEED_ADMIN_PASSWORD` to create `admin@lms.dev` (skipped otherwise, so a public site never ships a well-known admin password). Health check path: `/health`. The free tier sleeps when idle, so the first request can take about a minute.
 - **Web:** Vercel, root `frontend`, framework Vite, env `VITE_API_URL` set to the Render URL.
 
+## Roadmap: AI/ML features
+
+Planned in this order, one branch per step, each merged and deployable on its own. Status is stated plainly; nothing below is claimed as working unless it says so.
+
+| Step | What | Status |
+|---|---|---|
+| 1. Foundations | Log every quiz answer per question with a skill tag, so there is real data to learn from | Done |
+| 2. Knowledge tracing | Predict the chance a student answers the next question correctly; show per-skill mastery to students and the class's weakest skills to instructors. Pipeline, API and UI are built and tested; the model has **not** been trained on real data yet, so the app shows labeled estimates. See [ml/README.md](ml/README.md) | Built, real training pending |
+| 3. UI refresh | A calmer, more distinctive visual identity: a defined colour palette as design tokens, readable typography, no template-style gradients or glass effects, accessible contrast in light and dark mode | Planned |
+| 4. Course study assistant | An "ask this course" assistant that answers only from the course's own lessons and cites them. Includes a retrieval evaluation comparing embedding models and chunk sizes (Recall@k, MRR) on a hand-written question set | Planned |
+
+Evaluated and deliberately left out for now: at-risk student prediction, similar-question suggestions in Q&A, a summary faithfulness checker, next-lesson recommendations and an LLM quiz generator. A standalone prompt-injection detector was dropped because it is already covered by a separate research project.
+
 ## What I'd do next
 
 - Refresh tokens in httpOnly cookies instead of a token in localStorage (needs `SameSite=None` cookies and CSRF handling because the web app and API live on different domains).
