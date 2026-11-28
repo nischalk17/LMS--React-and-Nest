@@ -9,7 +9,7 @@ A full-stack learning platform where instructors publish courses made of text, v
 - **Students:** browse the published catalog, enroll, open lessons, mark modules complete, and see per-course progress on a dashboard.
 - **Instructor analytics:** per course, enrolled students, average progress and unanswered questions.
 - **Admin:** a dashboard with platform stats, a searchable and paginated user list (change roles, delete users) and course moderation (unpublish, delete). Admins cannot change or delete themselves.
-- **Quizzes:** instructors build one multiple-choice quiz per course (passing score, 2-6 options per question); enrolled students take it, get an instant score and per-question feedback, and keep an attempt history. The answer key never reaches students.
+- **Quizzes:** instructors build one multiple-choice quiz per course (passing score, 2-6 options per question); enrolled students take it, get an instant score and per-question feedback, and keep an attempt history. The answer key never reaches students. Each question has a skill tag, and every answer is logged per question (the data behind the planned mastery tracking). Editing a quiz keeps existing question ids, so a student's answer history survives edits.
 - **Course Q&A:** enrolled students ask questions on a course; only that course's instructor can answer. Non-members get a 403.
 - **Access rules:** drafts are visible only to their owner and admins; lesson content stays hidden until the student enrolls (students keep access if a course is later unpublished).
 - **Hardening:** password hashes never leave the API, module links must be http(s) (blocks `javascript:` URLs), validated UUID params, rate limiting that works behind a proxy, Helmet, atomic enrollment with proper 409s on double-clicks, and a required 32+ character `JWT_SECRET` in production.
@@ -49,6 +49,7 @@ erDiagram
   COURSE ||--o| QUIZ : has
   QUIZ ||--o{ QUIZ_QUESTION : contains
   QUIZ ||--o{ QUIZ_ATTEMPT : "graded attempts"
+  QUIZ_ATTEMPT ||--o{ QUIZ_RESPONSE : "answer per question"
   USER ||--o{ QUIZ_ATTEMPT : takes
   MODULE ||--o{ PROGRESS : "progress on"
   USER {
@@ -90,11 +91,18 @@ erDiagram
     text text
     jsonb options
     int correctIndex
+    string skill
   }
   QUIZ_ATTEMPT {
     uuid id PK
     int score
     bool passed
+  }
+  QUIZ_RESPONSE {
+    uuid id PK
+    string skill
+    int selectedIndex
+    bool correct
   }
   PROGRESS {
     uuid id PK

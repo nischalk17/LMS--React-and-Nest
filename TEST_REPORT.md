@@ -9,8 +9,8 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 | Backend | Lint (ESLint + Prettier) | Pass, 0 errors, 0 warnings |
 | Backend | Type check, build | Pass |
 | Backend | Unit tests (Jest) | **12 / 12 pass** (3 suites) |
-| Backend | E2E tests (Jest + supertest, real Postgres) | **44 / 44 pass** |
-| Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes` |
+| Backend | E2E tests (Jest + supertest, real Postgres) | **48 / 48 pass** |
+| Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes`, `AddQuizResponses` |
 | Backend | Compiled build smoke test (`node dist/main`, production mode) | Pass, see "Production smoke checks" |
 | Frontend | Lint (`--max-warnings 0`), type check, production build | Pass |
 | Frontend | UI tests (Vitest + Testing Library, jsdom) | **12 / 12 pass** (4 files) |
@@ -19,7 +19,7 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 
 **Backend unit (12):** `AuthService` (hashing, lower-cased emails, default role, duplicate email, valid/invalid login), `ProgressService` (enrollment ownership, module must belong to the course, completion at 100%), `validateEnv` (JWT secret required, 32+ characters in production).
 
-**Backend e2e (44):**
+**Backend e2e (48):**
 - **Auth:** public health check reports the database; registration never returns a password hash; duplicate email (409) and invalid input (400); wrong vs correct login; 401 without or with a bad token; admin role cannot be chosen at registration.
 - **Roles and ownership:** students cannot create courses; other instructors cannot edit or delete a course or its modules (IDOR); only students can enroll; malformed UUIDs return 400.
 - **Visibility:** drafts hidden from students; lesson content hidden until enrollment and for non-owner instructors; enrolled students keep access after a course is unpublished; admins can open any course with full content; the catalog leaks no password hashes.
@@ -28,6 +28,7 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 - **Input safety:** `javascript:` module URLs are rejected with 400; empty URL fields are accepted and stored as null.
 - **Q&A:** non-members get 403; enrolled students can ask; only the course instructor can answer.
 - **Quizzes (5):** only the owner can create or edit; invalid answer keys and empty quizzes are rejected; students and the unenrolled never see `correctIndex`; submissions are validated (wrong count, out-of-range option, wrong type, wrong role); grading gives 100/50/0 correctly; attempt history is kept; updates replace questions; deletion returns 404 afterwards.
+- **Quiz response logging (4):** skill tags are stored and default to the course title; one response row per question is written for every attempt (6 rows for 3 attempts x 2 questions, with correct flags and the selected option); editing a quiz keeps existing question ids and the history linked to them, while removed questions leave orphaned-but-intact rows (skill snapshot and result survive); malformed question ids are rejected.
 - **Instructor analytics (2):** students, average progress and unanswered-question counts per course; scoped to the instructor's own courses; 403 for students.
 - **Admin (8):** 403 for non-admins and 401 for anonymous users; stats; user search and pagination (limits above 50 rejected); role changes apply immediately, invalid roles rejected, no self role change; moderation (unpublish, delete); user deletion cascades and self-deletion is blocked.
 - **Cleanup:** deleting a course with enrollments works (an earlier test found a 500 here, fixed with foreign-key cascades).

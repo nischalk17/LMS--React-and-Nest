@@ -8,7 +8,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from '../entities/course.entity';
 import { Enrollment } from '../entities/enrollment.entity';
-import { Quiz, QuizAttempt, QuizQuestion } from '../entities/quiz.entity';
+import {
+  Quiz,
+  QuizAttempt,
+  QuizQuestion,
+  QuizResponse,
+} from '../entities/quiz.entity';
 import { UserRole } from '../entities/user.entity';
 import { AuthUser } from '../auth/decorators/current-user.decorator';
 import { UpsertQuizDto } from './dto/quiz.dto';
@@ -77,13 +82,14 @@ export class QuizzesService {
         id: q.id,
         text: q.text,
         options: q.options,
+        skill: q.skill,
         ...(isOwner ? { correctIndex: q.correctIndex } : {}),
       })),
     };
   }
 
   async upsert(courseId: string, dto: UpsertQuizDto, user: AuthUser) {
-    await this.assertOwner(courseId, user);
+    const course = await this.assertOwner(courseId, user);
     dto.questions.forEach((q, i) => {
       if (q.correctIndex >= q.options.length) {
         throw new BadRequestException(
@@ -98,7 +104,6 @@ export class QuizzesService {
         quiz.title = dto.title;
         quiz.passingScore = dto.passingScore;
         await manager.save(quiz);
-        await manager.delete(QuizQuestion, { quizId: quiz.id });
       } else {
         quiz = await manager.save(
           manager.create(Quiz, {
@@ -108,11 +113,37 @@ export class QuizzesService {
           }),
         );
       }
-      await manager.save(
-        dto.questions.map((q, order) =>
-          manager.create(QuizQuestion, { ...q, order, quizId: quiz.id }),
-        ),
-      );
+
+      // Questions that arrive with an existing id are updated in place, so the
+      // answer history of students stays linked to them. New ones are inserted
+      // and any that were left out are removed.
+      const existing = await manager.find(QuizQuestion, {
+        where: { quizId: quiz.id },
+      });
+      const existingById = new Map(existing.map((q) => [q.id, q]));
+      const keptIds = new Set<string>();
+
+      const rows = dto.questions.map((q, order) => {
+        const fields = {
+          text: q.text,
+          options: q.options,
+          correctIndex: q.correctIndex,
+          skill: q.skill ?? course.title,
+          order,
+        };
+        const current = q.id ? existingById.get(q.id) : undefined;
+        if (current) {
+          keptIds.add(current.id);
+          return Object.assign(current, fields);
+        }
+        return manager.create(QuizQuestion, { ...fields, quizId: quiz.id });
+      });
+
+      const removed = existing.filter((q) => !keptIds.has(q.id));
+      if (removed.length) {
+        await manager.remove(removed);
+      }
+      await manager.save(rows);
     });
     return this.get(courseId, user);
   }
@@ -126,6 +157,7 @@ export class QuizzesService {
 
   async submit(courseId: string, answers: number[], user: AuthUser) {
     await this.assertEnrolled(courseId, user);
+    const course = await this.getCourse(courseId);
     const quiz = await this.loadQuiz(courseId);
 
     if (answers.length !== quiz.questions.length) {
@@ -142,14 +174,33 @@ export class QuizzesService {
 
     const correct = results.filter(Boolean).length;
     const score = Math.round((correct / quiz.questions.length) * 100);
-    const attempt = await this.attempts.save(
-      this.attempts.create({
-        quizId: quiz.id,
-        studentId: user.id,
-        score,
-        passed: score >= quiz.passingScore,
-      }),
-    );
+
+    // The attempt and one response row per question are written together, so
+    // the per-question history used for knowledge tracing is never partial.
+    const attempt = await this.attempts.manager.transaction(async (manager) => {
+      const saved = await manager.save(
+        manager.create(QuizAttempt, {
+          quizId: quiz.id,
+          studentId: user.id,
+          score,
+          passed: score >= quiz.passingScore,
+        }),
+      );
+      await manager.save(
+        quiz.questions.map((q, i) =>
+          manager.create(QuizResponse, {
+            attemptId: saved.id,
+            quizId: quiz.id,
+            questionId: q.id,
+            studentId: user.id,
+            skill: q.skill ?? course.title,
+            selectedIndex: answers[i],
+            correct: results[i],
+          }),
+        ),
+      );
+      return saved;
+    });
     return {
       id: attempt.id,
       score,

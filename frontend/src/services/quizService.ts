@@ -5,6 +5,8 @@ export interface QuizQuestion {
   id?: string;
   text: string;
   options: string[];
+  /** Topic the question tests. */
+  skill?: string | null;
   /** Only present for the course's instructor. */
   correctIndex?: number;
 }
@@ -20,7 +22,14 @@ export interface Quiz {
 export interface QuizDraft {
   title: string;
   passingScore: number;
-  questions: { text: string; options: string[]; correctIndex: number }[];
+  questions: {
+    /** Present for existing questions so their answer history is kept. */
+    id?: string;
+    text: string;
+    options: string[];
+    correctIndex: number;
+    skill?: string;
+  }[];
 }
 
 export interface AttemptResult {

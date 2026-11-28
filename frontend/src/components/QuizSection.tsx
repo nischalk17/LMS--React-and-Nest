@@ -109,6 +109,11 @@ const QuizSection = ({ courseId }: { courseId: string }) => {
               <fieldset key={q.id ?? qi} className="space-y-2">
                 <legend className="font-medium text-slate-900 dark:text-slate-100">
                   {qi + 1}. {q.text}
+                  {q.skill && (
+                    <span className="ml-2 text-xs font-normal text-slate-500">
+                      ({q.skill})
+                    </span>
+                  )}
                 </legend>
                 {q.options.map((option, oi) => (
                   <label key={oi} className="flex cursor-pointer items-center gap-2 text-sm">
