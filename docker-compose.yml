@@ -1,6 +1,8 @@
-# One command: docker compose up --build
+# Traceback LMS. One command: docker compose up --build
 #   web  -> http://localhost:5173
 #   api  -> http://localhost:3000   (Swagger UI: /docs)
+name: traceback-lms
+
 services:
   db:
     image: postgres:16-alpine

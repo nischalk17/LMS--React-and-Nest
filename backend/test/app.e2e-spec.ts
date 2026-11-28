@@ -6,7 +6,7 @@ import { AppModule } from '../src/app.module';
 import { setupApp } from '../src/setup-app';
 import { MasteryService } from '../src/mastery/mastery.service';
 
-describe('LMS API (e2e)', () => {
+describe('Traceback LMS API (e2e)', () => {
   let app: INestApplication;
 
   const register = (email: string, role: 'student' | 'instructor') =>

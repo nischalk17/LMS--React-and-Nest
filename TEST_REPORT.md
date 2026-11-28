@@ -1,4 +1,4 @@
-# Test Report
+# Traceback LMS: Test Report
 
 Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 
@@ -13,7 +13,7 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 | Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes`, `AddQuizResponses`, `FixQuizResponseQuizId` |
 | Backend | Compiled build smoke test (`node dist/main`, production mode) | Pass, see "Production smoke checks" |
 | Frontend | Lint (`--max-warnings 0`), type check, production build | Pass |
-| Frontend | UI tests (Vitest + Testing Library, jsdom), including a palette contrast test (WCAG AA, both themes) | **61 / 61 pass** (6 files) |
+| Frontend | UI tests (Vitest + Testing Library, jsdom), including a palette contrast test (WCAG AA, both themes) | **63 / 63 pass** (7 files) |
 | ML | ruff lint + format, pytest (features, leakage, golden parity, pipeline on simulated data) | **8 / 8 pass** |
 
 ## What the tests cover
