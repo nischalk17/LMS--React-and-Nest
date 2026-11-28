@@ -19,7 +19,7 @@ const StatCard = ({ label, value }: { label: string; value: number }) => (
   <Card className="shadow-sm">
     <CardContent className="p-5">
       <div className="text-3xl font-semibold">{value}</div>
-      <div className="text-sm text-slate-600 dark:text-slate-400">{label}</div>
+      <div className="text-sm text-muted-foreground">{label}</div>
     </CardContent>
   </Card>
 );
@@ -37,7 +37,7 @@ const Pager = ({
 }) => {
   const pages = Math.max(1, Math.ceil(total / limit));
   return (
-    <div className="flex items-center justify-between pt-3 text-sm text-slate-600 dark:text-slate-400">
+    <div className="flex items-center justify-between pt-3 text-sm text-muted-foreground">
       <span>
         Page {page} of {pages} ({total} total)
       </span>
@@ -149,13 +149,13 @@ const AdminDashboard = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted-foreground">
           Manage users and moderate courses.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
           />
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-slate-500">
+              <thead className="text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Email</th>
@@ -199,10 +199,10 @@ const AdminDashboard = () => {
                 {users?.items.map((u) => {
                   const isSelf = u.id === user?.id;
                   return (
-                    <tr key={u.id} className="border-t border-slate-200 dark:border-slate-800">
+                    <tr key={u.id} className="border-t border-border">
                       <td className="py-2 pr-4">
                         {u.firstName} {u.lastName}
-                        {isSelf && <span className="ml-2 text-xs text-slate-500">(you)</span>}
+                        {isSelf && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
                       </td>
                       <td className="py-2 pr-4">{u.email}</td>
                       <td className="py-2 pr-4">
@@ -255,7 +255,7 @@ const AdminDashboard = () => {
           />
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="text-slate-500">
+              <thead className="text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-4">Title</th>
                   <th className="py-2 pr-4">Instructor</th>
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
               </thead>
               <tbody>
                 {courses?.items.map((c) => (
-                  <tr key={c.id} className="border-t border-slate-200 dark:border-slate-800">
+                  <tr key={c.id} className="border-t border-border">
                     <td className="py-2 pr-4">{c.title}</td>
                     <td className="py-2 pr-4">
                       {c.instructor.firstName} {c.instructor.lastName}

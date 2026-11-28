@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FileText } from 'lucide-react';
 import QuizEditor from '../components/QuizEditor';
 import ErrorMessage from '../components/ErrorMessage';
 import { getErrorMessage } from '../utils/errors';
@@ -147,7 +148,7 @@ const EditCourse = () => {
   };
 
   if (loading) {
-    return <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">Loading...</div>;
+    return <div className="rounded-lg border border-border bg-card p-6 shadow-sm">Loading...</div>;
   }
 
   if (!course) {
@@ -159,14 +160,14 @@ const EditCourse = () => {
   return (
     <div className="space-y-6">
       {loadError && <ErrorMessage message={loadError} />}
-      <Card className="shadow-brand">
+      <Card className="">
         <CardHeader>
           <CardTitle className="text-2xl">Edit Course</CardTitle>
           <CardDescription>Update details and manage modules using Tailwind UI.</CardDescription>
         </CardHeader>
         <CardContent>
           {error && (
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -217,10 +218,10 @@ const EditCourse = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                          className="h-4 w-4 rounded border-input text-brand focus:ring-ring"
                           checked={field.value}
                           onChange={(e) => field.onChange(e.target.checked)}
                         />
@@ -254,10 +255,10 @@ const EditCourse = () => {
           <CardDescription>Add, upload, or remove modules.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <form onSubmit={handleAddModule} className="space-y-4 rounded-lg border border-slate-200 p-4">
+          <form onSubmit={handleAddModule} className="space-y-4 rounded-lg border border-border p-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="text-sm font-medium text-slate-700">Module Title</label>
+                <label className="text-sm font-medium text-foreground">Module Title</label>
                 <Input
                   value={moduleForm.title}
                   onChange={(e) => setModuleForm({ ...moduleForm, title: e.target.value })}
@@ -267,7 +268,7 @@ const EditCourse = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Type</label>
+                <label className="text-sm font-medium text-foreground">Type</label>
                 <select
                   value={moduleForm.type}
                   onChange={(e) =>
@@ -277,7 +278,7 @@ const EditCourse = () => {
                     })
                   }
                   required
-                  className="mt-2 flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                  className="mt-2 flex h-10 w-full rounded-md border border-border bg-card px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 >
                   <option value="text">Text</option>
                   <option value="video">Video</option>
@@ -288,7 +289,7 @@ const EditCourse = () => {
 
             {moduleForm.type === 'text' && (
               <div>
-                <label className="text-sm font-medium text-slate-700">Content</label>
+                <label className="text-sm font-medium text-foreground">Content</label>
                 <Textarea
                   className="mt-2"
                   rows={4}
@@ -300,7 +301,7 @@ const EditCourse = () => {
 
             {moduleForm.type === 'video' && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Video URL or Upload File</label>
+                <label className="text-sm font-medium text-foreground">Video URL or Upload File</label>
                 <Input
                   type="url"
                   value={moduleForm.videoUrl}
@@ -325,7 +326,7 @@ const EditCourse = () => {
                   />
                   <label
                     htmlFor="video-upload"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-background"
                   >
                     📹 Upload Video File
                   </label>
@@ -335,7 +336,7 @@ const EditCourse = () => {
 
             {moduleForm.type === 'pdf' && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">PDF URL or Upload File</label>
+                <label className="text-sm font-medium text-foreground">PDF URL or Upload File</label>
                 <Input
                   type="url"
                   value={moduleForm.pdfUrl}
@@ -360,9 +361,9 @@ const EditCourse = () => {
                   />
                   <label
                     htmlFor="pdf-upload"
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-background"
                   >
-                    📄 Upload PDF File
+                    <FileText className="mr-1 inline h-4 w-4" aria-hidden="true" /> Upload PDF File
                   </label>
                 </div>
               </div>
@@ -373,20 +374,20 @@ const EditCourse = () => {
 
           <div className="space-y-3">
             {sortedModules.length === 0 ? (
-              <p className="text-sm text-slate-600">No modules yet. Add your first module above.</p>
+              <p className="text-sm text-muted-foreground">No modules yet. Add your first module above.</p>
             ) : (
               sortedModules.map((module, index) => (
                 <div
                   key={module.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm"
+                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
                       {index + 1}
                     </span>
                     <div>
-                      <p className="font-semibold text-slate-900">{module.title}</p>
-                      <p className="text-xs uppercase tracking-wide text-slate-500">
+                      <p className="font-semibold text-foreground">{module.title}</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
                         {module.type}
                       </p>
                     </div>

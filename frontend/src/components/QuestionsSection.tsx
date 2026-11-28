@@ -119,13 +119,13 @@ const QuestionsSection = ({ courseId, isInstructor }: QuestionsSectionProps) => 
           </Form>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="space-y-4">
           {loading ? (
-            <p className="text-sm text-slate-600">Loading questions...</p>
+            <p className="text-sm text-muted-foreground">Loading questions...</p>
           ) : questions.length === 0 ? (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-muted-foreground">
               No questions yet.{' '}
               {user?.role === 'student' ? 'Be the first to ask!' : ''}
             </p>
@@ -133,28 +133,28 @@ const QuestionsSection = ({ courseId, isInstructor }: QuestionsSectionProps) => 
             questions.map((q) => (
               <div
                 key={q.id}
-                className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                className="space-y-3 rounded-lg border border-border bg-card p-4 shadow-sm"
               >
-                <div className="flex items-center justify-between text-sm text-slate-700">
-                  <div className="font-semibold text-slate-900">
+                <div className="flex items-center justify-between text-sm text-foreground">
+                  <div className="font-semibold text-foreground">
                     {fullName(q.author)}
                   </div>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(q.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="whitespace-pre-wrap text-slate-800">{q.body}</p>
+                <p className="whitespace-pre-wrap text-foreground">{q.body}</p>
 
                 {q.answer ? (
-                  <div className="space-y-1 rounded-md bg-slate-50 p-3">
-                    <div className="text-sm font-semibold text-slate-900">
+                  <div className="space-y-1 rounded-md bg-background p-3">
+                    <div className="text-sm font-semibold text-foreground">
                       Instructor{q.answeredBy ? `: ${fullName(q.answeredBy)}` : ''}
                     </div>
-                    <p className="whitespace-pre-wrap text-sm text-slate-700">
+                    <p className="whitespace-pre-wrap text-sm text-foreground">
                       {q.answer}
                     </p>
                     {q.answeredAt && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-muted-foreground">
                         Answered on{' '}
                         {new Date(q.answeredAt).toLocaleDateString()}
                       </span>
@@ -178,7 +178,7 @@ const QuestionsSection = ({ courseId, isInstructor }: QuestionsSectionProps) => 
                     </Button>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-muted-foreground">
                     Waiting for instructor response...
                   </p>
                 )}

@@ -2,6 +2,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import ThemeToggle from './ThemeToggle';
+import Logo from './Logo';
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -23,15 +24,10 @@ const Layout = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      <nav className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+    <div className="min-h-screen bg-background text-foreground transition-colors">
+      <nav className="sticky top-0 z-30 bg-nav text-nav-foreground">
         <div className="container flex h-16 items-center justify-between">
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white"
-          >
-            LMS
-          </Link>
+          <Logo />
           <div className="flex items-center gap-6">
             {navLinks.map((item) => {
               const isActive = location.pathname.startsWith(item.to);
@@ -39,22 +35,28 @@ const Layout = () => {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`text-sm font-medium transition-colors ${
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`border-b-2 py-1 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'text-primary'
-                      : 'text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-blue-400'
+                      ? 'border-primary text-nav-foreground'
+                      : 'border-transparent text-nav-foreground/75 hover:text-nav-foreground'
                   }`}
                 >
                   {item.label}
                 </Link>
               );
             })}
-            <ThemeToggle />
-            <div className="flex items-center gap-3 rounded-full bg-slate-100 px-3 py-1 text-sm dark:bg-slate-800">
-              <span className="font-medium text-slate-700 dark:text-slate-100">
+            <ThemeToggle onDark />
+            <div className="flex items-center gap-3 rounded-full bg-nav-foreground/10 px-3 py-1 text-sm">
+              <span className="font-medium text-nav-foreground">
                 {user?.firstName} {user?.lastName}
               </span>
-              <Button size="sm" variant="outline" onClick={handleLogout}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-nav-foreground/40 text-nav-foreground hover:bg-nav-foreground/10"
+                onClick={handleLogout}
+              >
                 Logout
               </Button>
             </div>

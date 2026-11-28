@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BookOpen, Check, FileText, PlayCircle, X } from 'lucide-react';
 import { getErrorMessage } from '../utils/errors';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,7 +70,7 @@ const CourseDetail = () => {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         Loading course...
       </div>
     );
@@ -77,7 +78,7 @@ const CourseDetail = () => {
 
   if (!course) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-700 shadow-sm">
+      <div className="rounded-lg border border-border bg-card p-6 text-foreground shadow-sm">
         {loadError || 'Course not found'}
       </div>
     );
@@ -118,9 +119,9 @@ const CourseDetail = () => {
 
   return (
     <div className="space-y-8">
-      <Card className="overflow-hidden shadow-brand">
+      <Card className="overflow-hidden">
         <div className="grid gap-6 md:grid-cols-[1.5fr,1fr]">
-          <div className="relative h-full min-h-[240px] bg-slate-100">
+          <div className="relative h-full min-h-[240px] bg-muted">
             {course.thumbnail ? (
               <img
                 src={course.thumbnail}
@@ -128,7 +129,7 @@ const CourseDetail = () => {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
+              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
                 No thumbnail provided
               </div>
             )}
@@ -141,7 +142,7 @@ const CourseDetail = () => {
               </Badge>
             </div>
             <CardTitle className="text-2xl">{course.title}</CardTitle>
-            <CardDescription className="text-base text-slate-700">
+            <CardDescription className="text-base text-foreground">
               {course.description}
             </CardDescription>
             <div className="flex flex-wrap gap-3">
@@ -167,7 +168,7 @@ const CourseDetail = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {sortedModules.length === 0 ? (
-            <p className="text-slate-600">No modules available yet.</p>
+            <p className="text-muted-foreground">No modules available yet.</p>
           ) : (
             <div className="space-y-3">
               {sortedModules.map((module, index) => {
@@ -179,16 +180,16 @@ const CourseDetail = () => {
                   <button
                     key={module.id}
                     onClick={() => handleModuleClick(module)}
-                    className={`w-full rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-primary hover:shadow-md ${isCompleted ? 'bg-emerald-50 border-emerald-200' : ''} ${canView ? '' : 'cursor-not-allowed opacity-70'}`}
+                    className={`w-full rounded-lg border border-border bg-card p-4 text-left shadow-sm transition hover:border-brand ${isCompleted ? 'bg-success/10 border-success/30' : ''} ${canView ? '' : 'cursor-not-allowed opacity-70'}`}
                     disabled={!canView}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
-                          {isCompleted ? '✓' : index + 1}
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
+                          {isCompleted ? <Check className="h-4 w-4" aria-label="Completed" /> : index + 1}
                         </span>
                         <div>
-                          <p className="text-base font-semibold text-slate-900">
+                          <p className="text-base font-semibold text-foreground">
                             {module.title}{' '}
                             {isCompleted && (
                               <Badge variant="success" className="ml-2">
@@ -196,21 +197,33 @@ const CourseDetail = () => {
                               </Badge>
                             )}
                           </p>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
                             {module.type.toUpperCase()}
                           </p>
                         </div>
                       </div>
                       {canView && (
-                        <span className="text-sm text-primary">
-                          {module.type === 'video' && '▶ Watch'}
-                          {module.type === 'pdf' && '📄 Open'}
-                          {module.type === 'text' && '📖 Read'}
+                        <span className="text-sm text-brand">
+                          {module.type === 'video' && (
+                            <span className="inline-flex items-center gap-1">
+                              <PlayCircle className="h-4 w-4" aria-hidden="true" /> Watch
+                            </span>
+                          )}
+                          {module.type === 'pdf' && (
+                            <span className="inline-flex items-center gap-1">
+                              <FileText className="h-4 w-4" aria-hidden="true" /> Open
+                            </span>
+                          )}
+                          {module.type === 'text' && (
+                            <span className="inline-flex items-center gap-1">
+                              <BookOpen className="h-4 w-4" aria-hidden="true" /> Read
+                            </span>
+                          )}
                         </span>
                       )}
                     </div>
                     {module.content && module.type === 'text' && (
-                      <p className="mt-2 max-h-14 overflow-hidden text-sm text-slate-600">
+                      <p className="mt-2 max-h-14 overflow-hidden text-sm text-muted-foreground">
                         {module.content}
                       </p>
                     )}
@@ -225,17 +238,17 @@ const CourseDetail = () => {
       {showModuleViewer && selectedModule && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4" onClick={closeModuleViewer}>
           <div
-            className="relative w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-2xl"
+            className="relative w-full max-w-5xl overflow-hidden rounded-lg bg-card"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              className="absolute right-4 top-4 rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200"
+              className="absolute right-4 top-4 rounded-full bg-muted p-2 text-foreground transition hover:bg-muted"
               onClick={closeModuleViewer}
             >
-              ✕
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
             <div className="space-y-4 p-6">
-              <h2 className="text-xl font-semibold text-slate-900">{selectedModule.title}</h2>
+              <h2 className="text-xl font-semibold text-foreground">{selectedModule.title}</h2>
 
               {isEnrolled && user?.role === 'student' && (
                 <div className="flex items-center gap-3">
@@ -247,14 +260,14 @@ const CourseDetail = () => {
                     </Button>
                   )}
                   {progressError && (
-                    <span className="text-sm text-red-600">{progressError}</span>
+                    <span className="text-sm text-destructive">{progressError}</span>
                   )}
                 </div>
               )}
 
               {selectedModule.type === 'video' && selectedModule.videoUrl && (
                 <div className="space-y-3">
-                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-200 shadow-sm min-h-[360px] md:min-h-[480px]">
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-border shadow-sm min-h-[360px] md:min-h-[480px]">
                     <iframe
                       src={convertToEmbedUrl(selectedModule.videoUrl)}
                       title={selectedModule.title}
@@ -276,8 +289,8 @@ const CourseDetail = () => {
               )}
 
               {selectedModule.type === 'pdf' && selectedModule.pdfUrl && (
-                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-sm text-amber-800">
+                <div className="space-y-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
+                  <p className="text-sm text-warning">
                     PDF files now open in a new tab for a consistent viewer experience.
                   </p>
                   <Button onClick={() => window.open(selectedModule.pdfUrl, '_blank', 'noopener,noreferrer')}>
@@ -287,7 +300,7 @@ const CourseDetail = () => {
               )}
 
               {selectedModule.type === 'text' && selectedModule.content && (
-                <div className="space-y-3 text-slate-800">
+                <div className="space-y-3 text-foreground">
                   {selectedModule.content.split('\n').map((paragraph, idx) => (
                     <p key={idx}>{paragraph}</p>
                   ))}

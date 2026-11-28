@@ -89,8 +89,8 @@ const QuizSection = ({
             role="status"
             className={`rounded-md border p-4 text-sm ${
               result.passed
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                : 'border-amber-200 bg-amber-50 text-amber-800'
+                ? 'border-success/30 bg-success/10 text-success'
+                : 'border-warning/30 bg-warning/10 text-warning'
             }`}
           >
             <p className="font-semibold">
@@ -114,10 +114,10 @@ const QuizSection = ({
           <>
             {quiz.questions.map((q, qi) => (
               <fieldset key={q.id ?? qi} className="space-y-2">
-                <legend className="font-medium text-slate-900 dark:text-slate-100">
+                <legend className="font-medium text-foreground">
                   {qi + 1}. {q.text}
                   {q.skill && (
-                    <span className="ml-2 text-xs font-normal text-slate-500">
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
                       ({q.skill})
                     </span>
                   )}
@@ -141,13 +141,13 @@ const QuizSection = ({
               {submitting ? 'Submitting...' : 'Submit answers'}
             </Button>
             {!allAnswered && (
-              <p className="text-xs text-slate-500">Answer every question to submit.</p>
+              <p className="text-xs text-muted-foreground">Answer every question to submit.</p>
             )}
           </>
         )}
 
         {attempts.length > 0 && (
-          <div className="text-sm text-slate-600 dark:text-slate-400">
+          <div className="text-sm text-muted-foreground">
             <p className="font-medium">Previous attempts</p>
             <ul className="list-disc pl-5">
               {attempts.slice(0, 5).map((a) => (

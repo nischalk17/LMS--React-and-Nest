@@ -147,6 +147,20 @@ Web: <http://localhost:5173> · API: <http://localhost:3000> · Swagger: <http:/
 
 No local Docker? Open the repo in a GitHub Codespace (green **Code** button, then **Codespaces**), which has Docker preinstalled, and run the same command in its terminal.
 
+## Design
+
+The interface uses three colours, each with one job, defined once as design tokens in `frontend/src/index.css`:
+
+| Role | Light | Dark | Used for |
+|---|---|---|---|
+| Forest green (structure) | `#1F4D3A` | mint `#8CCBA9` | Navigation bar, links, outline buttons, progress fill |
+| Cream (page) | `#F7F1E3` | deep green-black `#0F1A15` | Page background; cards sit on it with a hairline border instead of heavy shadows |
+| Coral (action) | `#F26B5B` | `#F47E70` | The main button on a screen and the current-page marker. Always carries dark text, never used as text colour |
+
+Success, warning and error use their own colours and are always paired with words, not colour alone. Typography is Figtree for text and Bricolage Grotesque for headings, bundled with the app (no third-party font requests). There are no gradients, glass effects or emoji icons.
+
+Every text and background pair is checked against WCAG AA (4.5:1) in both themes by an automated test, so changing a token cannot silently break readability.
+
 ## Demo credentials
 
 Created by the seed script (password for both: `Password123!`):
@@ -186,7 +200,7 @@ Planned in this order, one branch per step, each merged and deployable on its ow
 |---|---|---|
 | 1. Foundations | Log every quiz answer per question with a skill tag, so there is real data to learn from | Done |
 | 2. Knowledge tracing | Predict the chance a student answers the next question correctly; show per-skill mastery to students and the class's weakest skills to instructors. Pipeline, API and UI are built and tested; the model has **not** been trained on real data yet, so the app shows labeled estimates. See [ml/README.md](ml/README.md) | Built, real training pending |
-| 3. UI refresh | A calmer, more distinctive visual identity: a defined colour palette as design tokens, readable typography, no template-style gradients or glass effects, accessible contrast in light and dark mode | Planned |
+| 3. UI refresh | A calmer, more distinctive visual identity: a defined colour palette as design tokens, readable typography, no template-style gradients or glass effects, accessible contrast in light and dark mode. See [Design](#design) | Built, awaiting review |
 | 4. Course study assistant | An "ask this course" assistant that answers only from the course's own lessons and cites them. Includes a retrieval evaluation comparing embedding models and chunk sizes (Recall@k, MRR) on a hand-written question set | Planned |
 
 Evaluated and deliberately left out for now: at-risk student prediction, similar-question suggestions in Q&A, a summary faithfulness checker, next-lesson recommendations and an LLM quiz generator. A standalone prompt-injection detector was dropped because it is already covered by a separate research project.

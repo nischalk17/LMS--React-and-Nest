@@ -13,7 +13,7 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 | Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes`, `AddQuizResponses`, `FixQuizResponseQuizId` |
 | Backend | Compiled build smoke test (`node dist/main`, production mode) | Pass, see "Production smoke checks" |
 | Frontend | Lint (`--max-warnings 0`), type check, production build | Pass |
-| Frontend | UI tests (Vitest + Testing Library, jsdom) | **16 / 16 pass** (5 files) |
+| Frontend | UI tests (Vitest + Testing Library, jsdom), including a palette contrast test (WCAG AA, both themes) | **61 / 61 pass** (6 files) |
 | ML | ruff lint + format, pytest (features, leakage, golden parity, pipeline on simulated data) | **8 / 8 pass** |
 
 ## What the tests cover
@@ -38,6 +38,11 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 **Frontend (16):** error-message helper (API messages, validation arrays, plain strings, network failure); API client (token attached, a failed login does not reload the page, an expired session logs out and redirects); Login page shows the server's error message and its labels are linked to the inputs; quiz taker (hidden when no quiz, submit enabled only when everything is answered, result shown, errors shown); mastery panel (bands, early-estimate flag, estimate vs trained-model wording, empty and error states).
 
 **ML (8):** hand-calculated feature values; no-history prior fallback; the vectorised training features equal a plain reference definition at every step; features never use future answers; golden-file consistency; the training pipeline runs end to end on simulated data with a student-level split and beats chance; a model trained on simulated data can never be exported; the simulator is reproducible.
+
+## UI refresh: what is and is not verified
+
+- **Verified:** every text/background token pair meets WCAG AA in light and dark (automated test that reads the real stylesheet and also checks the RGB channels match the documented hex values); no legacy palette, gradient, glass or emoji classes remain; lint, typecheck and production build pass; the real components render with the real built stylesheet.
+- **Not verified:** the refresh has not been checked in a real browser at phone and desktop widths, and focus rings, hover states and the dark theme have not been inspected on the live pages. A manual pass through every page in both themes is still needed.
 
 ## Knowledge tracing (Plan B): what is and is not verified
 

@@ -116,7 +116,7 @@ const QuizEditor = ({ courseId }: { courseId: string }) => {
       <CardContent className="space-y-5">
         {error && <ErrorMessage message={error} />}
         {message && (
-          <p role="status" className="text-sm text-emerald-700">
+          <p role="status" className="text-sm text-success">
             {message}
           </p>
         )}
@@ -146,7 +146,7 @@ const QuizEditor = ({ courseId }: { courseId: string }) => {
         </div>
 
         {draft.questions.map((q, qi) => (
-          <div key={qi} className="space-y-2 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <div key={qi} className="space-y-2 rounded-lg border border-border p-4">
             <div className="flex items-center gap-2">
               <Input
                 placeholder={`Question ${qi + 1}`}
@@ -209,7 +209,7 @@ const QuizEditor = ({ courseId }: { courseId: string }) => {
             >
               Add option
             </Button>
-            <p className="text-xs text-slate-500">The selected radio button is the correct answer.</p>
+            <p className="text-xs text-muted-foreground">The selected radio button is the correct answer.</p>
           </div>
         ))}
 

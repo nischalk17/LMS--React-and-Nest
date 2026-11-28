@@ -17,39 +17,29 @@ export default {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: '#2563eb',
-          foreground: '#f8fafc',
-        },
-        secondary: {
-          DEFAULT: '#22c55e',
-          foreground: '#f8fafc',
-        },
-        muted: {
-          DEFAULT: '#e2e8f0',
-          foreground: '#1f2937',
-        },
-        destructive: {
-          DEFAULT: '#ef4444',
-          foreground: '#f8fafc',
-        },
-        card: {
-          DEFAULT: '#ffffff',
-          foreground: '#0f172a',
-        },
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--border) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
+        card: { DEFAULT: 'rgb(var(--card) / <alpha-value>)', foreground: 'rgb(var(--foreground) / <alpha-value>)' },
+        muted: { DEFAULT: 'rgb(var(--muted) / <alpha-value>)', foreground: 'rgb(var(--muted-foreground) / <alpha-value>)' },
+        brand: { DEFAULT: 'rgb(var(--brand) / <alpha-value>)', foreground: 'rgb(var(--brand-foreground) / <alpha-value>)' },
+        primary: { DEFAULT: 'rgb(var(--primary) / <alpha-value>)', foreground: 'rgb(var(--primary-foreground) / <alpha-value>)' },
+        secondary: { DEFAULT: 'rgb(var(--secondary) / <alpha-value>)', foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)' },
+        success: 'rgb(var(--success) / <alpha-value>)',
+        warning: 'rgb(var(--warning) / <alpha-value>)',
+        destructive: { DEFAULT: 'rgb(var(--destructive) / <alpha-value>)', foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)' },
+        nav: { DEFAULT: 'rgb(var(--nav) / <alpha-value>)', foreground: 'rgb(var(--nav-foreground) / <alpha-value>)' },
+      },
+      fontFamily: {
+        sans: ['"Figtree Variable"', 'ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        heading: ['"Bricolage Grotesque Variable"', '"Figtree Variable"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        lg: '0.75rem',
-        md: '0.5rem',
-        sm: '0.375rem',
-      },
-      boxShadow: {
-        brand: '0 10px 40px rgba(15, 23, 42, 0.12)',
+        lg: '0.5rem',
+        md: '0.375rem',
+        sm: '0.25rem',
       },
       keyframes: {
         'accordion-down': {

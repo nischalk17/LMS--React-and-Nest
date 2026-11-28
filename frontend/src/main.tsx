@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App.tsx';
+import '@fontsource-variable/figtree';
+import '@fontsource-variable/bricolage-grotesque';
 import './index.css';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext.tsx';
