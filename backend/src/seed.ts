@@ -1,63 +1,20 @@
-import * as bcrypt from 'bcryptjs';
 import dataSource from './data-source';
 import { seedDemoActivity } from './seed-demo-activity';
-import { User, UserRole } from './entities/user.entity';
+import { DEMO_PASSWORD, seedAccounts } from './seed-accounts';
 import { Course } from './entities/course.entity';
 import { Module, ModuleType } from './entities/module.entity';
 import { Quiz, QuizQuestion } from './entities/quiz.entity';
-
-const DEMO_PASSWORD = 'Password123!';
-
-async function upsertUser(
-  email: string,
-  firstName: string,
-  lastName: string,
-  role: UserRole,
-  password = DEMO_PASSWORD,
-) {
-  const repo = dataSource.getRepository(User);
-  const existing = await repo.findOne({ where: { email } });
-  if (existing) return existing;
-  return repo.save(
-    repo.create({
-      email,
-      firstName,
-      lastName,
-      role,
-      password: await bcrypt.hash(password, 10),
-    }),
-  );
-}
 
 async function main() {
   await dataSource.initialize();
   await dataSource.runMigrations();
 
-  const instructor = await upsertUser(
-    'instructor@lms.dev',
-    'Ivy',
-    'Instructor',
-    UserRole.INSTRUCTOR,
-  );
-  // A public deployment must not ship an admin with a well-known password:
-  // in production the admin is only created when SEED_ADMIN_PASSWORD is set.
-  const adminPassword =
-    process.env.SEED_ADMIN_PASSWORD ||
-    (process.env.NODE_ENV === 'production' ? undefined : DEMO_PASSWORD);
-  if (adminPassword) {
-    await upsertUser(
-      'admin@lms.dev',
-      'Ada',
-      'Admin',
-      UserRole.ADMIN,
-      adminPassword,
-    );
-  } else {
+  const { instructor, adminPassword } = await seedAccounts(dataSource);
+  if (!adminPassword) {
     console.log(
       'Skipping admin: set SEED_ADMIN_PASSWORD to create admin@lms.dev',
     );
   }
-  await upsertUser('student@lms.dev', 'Sam', 'Student', UserRole.STUDENT);
 
   const courseRepo = dataSource.getRepository(Course);
   const moduleRepo = dataSource.getRepository(Module);
