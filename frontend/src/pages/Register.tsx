@@ -72,6 +72,7 @@ const Register = () => {
         <ThemeToggle />
       </div>
       <Logo to="/login" className="text-brand" />
+      <p className="-mt-3 text-sm text-muted-foreground">Find where it went wrong.</p>
       <Card className="relative z-10 w-full max-w-3xl transition">
         <CardHeader className="space-y-3">
           <CardTitle className="text-2xl">Create your account</CardTitle>

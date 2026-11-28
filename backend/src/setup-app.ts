@@ -29,7 +29,7 @@ export function setupApp(app: INestApplication, withDocs = false) {
 
   if (withDocs) {
     const config = new DocumentBuilder()
-      .setTitle('LMS API')
+      .setTitle('Traceback LMS API')
       .setDescription('Courses, enrollments and progress tracking')
       .setVersion('1.0')
       .addBearerAuth()

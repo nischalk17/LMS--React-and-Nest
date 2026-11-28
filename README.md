@@ -1,6 +1,10 @@
-# LMS: Learning Management System
+# Traceback LMS
 
-A full-stack learning platform where instructors publish courses made of text, video and PDF modules, and students enroll and track their progress. Built with React, NestJS and PostgreSQL, with role-based access and a documented REST API.
+*Find where it went wrong.*
+
+A learning platform for computer science. Instructors build skill-tagged courses and quizzes; students see where they are strong and where they need practice, and instructors see where a whole class is struggling. Built with React, NestJS and PostgreSQL, with role-based access, a documented REST API and a mastery-tracking pipeline (the model is not yet trained on real data, so mastery is shown as a labeled estimate).
+
+The name is the Python/JavaScript term for the report of where a program failed. Here it means the same thing for a learner: trace a wrong answer back to the skill behind it.
 
 ## Features
 
