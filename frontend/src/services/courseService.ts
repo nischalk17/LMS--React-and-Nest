@@ -100,6 +100,7 @@ export interface CourseAnalytics {
   students: number;
   averageProgress: number;
   unansweredQuestions: number;
+  weakestSkills: { skill: string; accuracy: number; answers: number }[];
 }
 
 export const analyticsService = {

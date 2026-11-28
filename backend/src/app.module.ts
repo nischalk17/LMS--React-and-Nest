@@ -8,6 +8,7 @@ import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { ProgressModule } from './progress/progress.module';
 import { QuestionsModule } from './questions/questions.module';
+import { MasteryModule } from './mastery/mastery.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health.controller';
@@ -30,6 +31,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     QuestionsModule,
     AdminModule,
     QuizzesModule,
+    MasteryModule,
   ],
   controllers: [HealthController],
   providers: [

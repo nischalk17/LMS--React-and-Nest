@@ -7,6 +7,7 @@ import { enrollmentService, Enrollment } from '../services/enrollmentService';
 import { convertToEmbedUrl } from '../utils/videoUtils';
 import QuestionsSection from '../components/QuestionsSection';
 import QuizSection from '../components/QuizSection';
+import MasterySection from '../components/MasterySection';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -23,6 +24,7 @@ const CourseDetail = () => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showModuleViewer, setShowModuleViewer] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [masteryKey, setMasteryKey] = useState(0);
   const [progressError, setProgressError] = useState('');
 
   useEffect(() => {
@@ -296,7 +298,12 @@ const CourseDetail = () => {
         </div>
       )}
 
-      {isEnrolled && user?.role === 'student' && <QuizSection courseId={course.id} />}
+      {isEnrolled && user?.role === 'student' && (
+        <>
+          <QuizSection courseId={course.id} onSubmitted={() => setMasteryKey((k) => k + 1)} />
+          <MasterySection courseId={course.id} refreshKey={masteryKey} />
+        </>
+      )}
 
       {course && (isEnrolled || (user?.role === 'instructor' && course.instructor.id === user.id)) && (
         <QuestionsSection

@@ -103,6 +103,14 @@ const InstructorCourses = () => {
                     {stats[course.id]?.students ?? 0} students ·{' '}
                     {stats[course.id]?.averageProgress ?? 0}% avg progress
                   </div>
+                  {(stats[course.id]?.weakestSkills?.length ?? 0) > 0 && (
+                    <div>
+                      <span className="font-medium">Weakest skills:</span>{' '}
+                      {stats[course.id].weakestSkills
+                        .map((w) => `${w.skill} (${Math.round(w.accuracy * 100)}%)`)
+                        .join(', ')}
+                    </div>
+                  )}
                   {(stats[course.id]?.unansweredQuestions ?? 0) > 0 && (
                     <div className="font-medium text-amber-600">
                       {stats[course.id].unansweredQuestions} unanswered question(s)

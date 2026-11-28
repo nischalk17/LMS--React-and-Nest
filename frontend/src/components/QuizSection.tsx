@@ -12,7 +12,13 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 /** Student view: take the course quiz and see past scores. */
-const QuizSection = ({ courseId }: { courseId: string }) => {
+const QuizSection = ({
+  courseId,
+  onSubmitted,
+}: {
+  courseId: string;
+  onSubmitted?: () => void;
+}) => {
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -54,6 +60,7 @@ const QuizSection = ({ courseId }: { courseId: string }) => {
       setResult(await quizService.submit(courseId, answers));
       setAttempts(await quizService.myAttempts(courseId));
       setError('');
+      onSubmitted?.();
     } catch (err) {
       setError(getErrorMessage(err, 'Could not submit the quiz'));
     } finally {

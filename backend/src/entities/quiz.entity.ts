@@ -120,6 +120,10 @@ export class QuizResponse {
   @Column()
   attemptId: string;
 
+  @ManyToOne(() => Quiz, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'quizId' })
+  quiz: Quiz;
+
   @Column()
   quizId: string;
 

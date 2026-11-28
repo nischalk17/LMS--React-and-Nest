@@ -8,18 +8,19 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 |---|---|---|
 | Backend | Lint (ESLint + Prettier) | Pass, 0 errors, 0 warnings |
 | Backend | Type check, build | Pass |
-| Backend | Unit tests (Jest) | **12 / 12 pass** (3 suites) |
-| Backend | E2E tests (Jest + supertest, real Postgres) | **48 / 48 pass** |
-| Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes`, `AddQuizResponses` |
+| Backend | Unit tests (Jest) | **24 / 24 pass** (4 suites) |
+| Backend | E2E tests (Jest + supertest, real Postgres) | **52 / 52 pass** |
+| Backend | Migrations from an empty database, then seed (run twice to prove it is idempotent) | Pass: `InitialSchema`, `AddQuestions`, `AddAdminRole`, `AddQuizzes`, `AddQuizResponses`, `FixQuizResponseQuizId` |
 | Backend | Compiled build smoke test (`node dist/main`, production mode) | Pass, see "Production smoke checks" |
 | Frontend | Lint (`--max-warnings 0`), type check, production build | Pass |
-| Frontend | UI tests (Vitest + Testing Library, jsdom) | **12 / 12 pass** (4 files) |
+| Frontend | UI tests (Vitest + Testing Library, jsdom) | **16 / 16 pass** (5 files) |
+| ML | ruff lint + format, pytest (features, leakage, golden parity, pipeline on simulated data) | **8 / 8 pass** |
 
 ## What the tests cover
 
-**Backend unit (12):** `AuthService` (hashing, lower-cased emails, default role, duplicate email, valid/invalid login), `ProgressService` (enrollment ownership, module must belong to the course, completion at 100%), `validateEnv` (JWT secret required, 32+ characters in production).
+**Backend unit (24):** `AuthService` (hashing, lower-cased emails, default role, duplicate email, valid/invalid login), `ProgressService` (enrollment ownership, module must belong to the course, completion at 100%), `validateEnv` (JWT secret required, 32+ characters in production), and the mastery features (parity with the Python implementation through a shared golden file, model prediction, fallback estimate, confidence levels).
 
-**Backend e2e (48):**
+**Backend e2e (52):**
 - **Auth:** public health check reports the database; registration never returns a password hash; duplicate email (409) and invalid input (400); wrong vs correct login; 401 without or with a bad token; admin role cannot be chosen at registration.
 - **Roles and ownership:** students cannot create courses; other instructors cannot edit or delete a course or its modules (IDOR); only students can enroll; malformed UUIDs return 400.
 - **Visibility:** drafts hidden from students; lesson content hidden until enrollment and for non-owner instructors; enrolled students keep access after a course is unpublished; admins can open any course with full content; the catalog leaks no password hashes.
@@ -29,11 +30,20 @@ Run on 2026-11-27, Node 26, PostgreSQL (local, throwaway database).
 - **Q&A:** non-members get 403; enrolled students can ask; only the course instructor can answer.
 - **Quizzes (5):** only the owner can create or edit; invalid answer keys and empty quizzes are rejected; students and the unenrolled never see `correctIndex`; submissions are validated (wrong count, out-of-range option, wrong type, wrong role); grading gives 100/50/0 correctly; attempt history is kept; updates replace questions; deletion returns 404 afterwards.
 - **Quiz response logging (4):** skill tags are stored and default to the course title; one response row per question is written for every attempt (6 rows for 3 attempts x 2 questions, with correct flags and the selected option); editing a quiz keeps existing question ids and the history linked to them, while removed questions leave orphaned-but-intact rows (skill snapshot and result survive); malformed question ids are rejected.
+- **Mastery (4):** per-skill mastery is reported weakest first as an estimate when no model is shipped (values checked by hand); switches to the model path when one is provided; private to enrolled students (401 / 403 for not enrolled and for instructors, 404 for unknown course); instructors see their class's weakest skills only once a skill has at least 5 answers.
 - **Instructor analytics (2):** students, average progress and unanswered-question counts per course; scoped to the instructor's own courses; 403 for students.
 - **Admin (8):** 403 for non-admins and 401 for anonymous users; stats; user search and pagination (limits above 50 rejected); role changes apply immediately, invalid roles rejected, no self role change; moderation (unpublish, delete); user deletion cascades and self-deletion is blocked.
 - **Cleanup:** deleting a course with enrollments works (an earlier test found a 500 here, fixed with foreign-key cascades).
 
-**Frontend (12):** error-message helper (API messages, validation arrays, plain strings, network failure); API client (token attached, a failed login does not reload the page, an expired session logs out and redirects); Login page shows the server's error message and its labels are linked to the inputs; quiz taker (hidden when no quiz, submit enabled only when everything is answered, result shown, errors shown).
+**Frontend (16):** error-message helper (API messages, validation arrays, plain strings, network failure); API client (token attached, a failed login does not reload the page, an expired session logs out and redirects); Login page shows the server's error message and its labels are linked to the inputs; quiz taker (hidden when no quiz, submit enabled only when everything is answered, result shown, errors shown); mastery panel (bands, early-estimate flag, estimate vs trained-model wording, empty and error states).
+
+**ML (8):** hand-calculated feature values; no-history prior fallback; the vectorised training features equal a plain reference definition at every step; features never use future answers; golden-file consistency; the training pipeline runs end to end on simulated data with a student-level split and beats chance; a model trained on simulated data can never be exported; the simulator is reproducible.
+
+## Knowledge tracing (Plan B): what is and is not verified
+
+- **Verified:** the feature definitions agree between Python and TypeScript; training/evaluation code runs correctly end to end; the API and UI behave correctly with and without a model; the demo seed is deterministic and idempotent.
+- **Not yet done: real training.** The ASSISTments dataset was not available, so **no real-data metric exists yet** and none is published. The app currently ships no model and labels all mastery values as estimates. The simulated-data run (AUC around 0.71) only proves the pipeline works; it says nothing about real students.
+- **Bug found by these tests:** `quiz_responses.quizId` was created as `varchar` without a foreign key (from the logging work), which broke any join to `quizzes`. Fixed with a data-preserving migration.
 
 ## Issues found and fixed in the final audit
 
